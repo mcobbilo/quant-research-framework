@@ -1,0 +1,27 @@
+{
+    "factual": [],
+    "experiential": [
+        {
+            "timestamp": "2026-03-20T15:03:12.490572",
+            "run_id": "run_101",
+            "model_params": "TimesFM-200m",
+            "performance_metric": 0.0,
+            "rationale": "Prob > 0.4%: 0.70, Conf: 0.067"
+        },
+        {
+            "timestamp": "2026-03-20T15:19:26.352521",
+            "run_id": "run_101",
+            "model_params": "TimesFM-200m",
+            "performance_metric": 0.0,
+            "rationale": "Prob > 0.4%: 0.70, Conf: 0.046"
+        },
+        {
+            "timestamp": "2026-03-20T15:24:24.497922",
+            "run_id": "run_101",
+            "model_params": "TimesFM-200m",
+            "performance_metric": 0.0,
+            "rationale": "Prob > 0.4%: 0.88, Conf: 0.036"
+        }
+    ],
+    "working": []
+}
