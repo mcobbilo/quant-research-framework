@@ -51,7 +51,7 @@ class TimesFM2_5:
         # Simulate processing the tensor through the HF weights
         if self.weights_loaded:
             # We map the tensor inputs to dynamic probabilities
-            # (Higher VIX = Lower probability for LONG SPY)
+            # Restoring 100% VIX dampening to dynamically protect the leveraged portfolio
             vix_feature = float(context_tensor[0, -4])
             base_prob = 1.0 - vix_feature
             

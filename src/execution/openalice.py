@@ -1,14 +1,31 @@
 import json
 import hashlib
 from datetime import datetime
+import math
 
-def calc_kelly(probability):
+def calc_kelly(probability, current_vix=None):
     """
-    Mock Kelly Criterion calculation.
+    Leveraged Kelly Criterion calculation bounded by rigorous Security Circuit Breakers.
     """
+    # [CIRCUIT BREAKER 1] NaN Corruption Check
+    if probability is None or math.isnan(probability):
+        print("[OpenAlice Guard] FATAL: Probability input is NaN. Forcing position size to 0.0")
+        return 0.0
+        
+    # [CIRCUIT BREAKER 2] Volatility Sanity Bounds
+    if current_vix is not None:
+        if current_vix < 5.0 or current_vix > 100.0:
+            print(f"[OpenAlice Guard] FATAL: VIX ({current_vix}) outside structural bounds (5-100). Forcing size to 0.0")
+            return 0.0
+            
     edge = probability - 0.5
-    size = max(0.01, edge * 2) 
-    return size
+    if edge <= 0:
+        return 0.0
+        
+    size = max(0.01, edge * 4.0)  # Max Size 2.0x (100% margin utilization) Note: Requires active VIX hedging!
+    
+    # [CIRCUIT BREAKER 3] Hard Capped Leverage Limit
+    return min(size, 2.0)
 
 class OpenAliceUTA:
     def __init__(self, account_id="alpha_fund"):
