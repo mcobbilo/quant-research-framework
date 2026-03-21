@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from models.hardcoded_wrapper import attach_features, StrategyA, StrategyB, StrategyC, StrategyD
+from models.hardcoded_wrapper import attach_features, StrategyA, StrategyB, StrategyC, StrategyD, StrategyE, StrategyF, StrategyG
 from execution.openalice import calc_kelly
 
 def run_strategy(model, df):
@@ -52,17 +52,39 @@ def main():
     
     spy_data = yf.download("SPY", start="2000-01-01", end="2025-01-01", progress=False, auto_adjust=True)
     vix_data = yf.download("^VIX", start="2000-01-01", end="2025-01-01", progress=False)
+    gold_data = yf.download("GC=F", start="2000-01-01", end="2025-01-01", progress=False)
+    copper_data = yf.download("HG=F", start="2000-01-01", end="2025-01-01", progress=False)
     
     if isinstance(spy_data.columns, pd.MultiIndex):
         spy = spy_data[('Close', 'SPY')]
         vix = vix_data[('Close', '^VIX')]
+        vix_open = vix_data[('Open', '^VIX')]
+        vix_high = vix_data[('High', '^VIX')]
+        vix_low = vix_data[('Low', '^VIX')]
+        
+        gold = gold_data[('Close', 'GC=F')]
+        copper = copper_data[('Close', 'HG=F')]
     else:
         spy = spy_data['Close']
         vix = vix_data['Close']
+        vix_open = vix_data['Open']
+        vix_high = vix_data['High']
+        vix_low = vix_data['Low']
+        
+        gold = gold_data['Close']
+        copper = copper_data['Close']
     
     df = pd.DataFrame(index=spy.index)
     df["SPY"] = spy
     df["VIX"] = vix
+    df["VIX_OPEN"] = vix_open
+    df["VIX_HIGH"] = vix_high
+    df["VIX_LOW"] = vix_low
+    df["GOLD"] = gold
+    df["COPPER"] = copper
+    
+    # Crucially ffill any missing commodity trading days before dropping NaNs so SPY geometry doesn't collapse
+    df.ffill(inplace=True)
     df = df.dropna()
     print(f"[Backtest] Base data loaded. Calculating technical vectors...")
     
@@ -78,7 +100,10 @@ def main():
     spy_total_return = ((spy_end / spy_start) - 1.0) * 100
 
     models = [
-        StrategyD(entry_z=-3.5, exit_z=3.0, baseline_prob=0.75)  # 0.75 maps to exactly 1.0x Kelly Sizing
+        StrategyD(entry_z=-3.5, exit_z=3.0, baseline_prob=0.75),
+        StrategyE(entry_z=-3.5, hold_days=60, baseline_prob=0.75),
+        StrategyF(shock_z=-3.5, decay_days=60, baseline_prob=0.75),
+        StrategyG(entry_z=-3.5, exit_z=3.0, baseline_prob=0.75)
     ]
     
     print("\n================= 25-YEAR SYSTEM YIELD =================")

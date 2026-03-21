@@ -1,0 +1,3 @@
+# Safety Net: Friction & Execution Limit Drag
+**Constraint:** The backtest and simulation frameworks must strictly calculate a `10 bps (0.1%)` penalty on every margin delta swap and apply a `~5% annualized` borrowing cost physically attached to any leverage sizing > `1.0x` SPY.
+**Agent Enforcement:** Any agent-generated research algorithm must physically subtract `capital * abs(size - previous_size) * 0.001` before reporting yield arrays. Strategies generating high-frequency turnover (e.g., Fourier scalping and daily oscillations) mathematically fail beneath these physical constraints and must be immediately scrapped during the initial Prompt Research Phase.
