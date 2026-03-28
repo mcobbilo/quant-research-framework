@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Swarm Dashboard | Antigravity Engine</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="glass-container">
+        <!-- Background Orbs for aesthetic depth -->
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+
+        <!-- Dashboard UI Overlay -->
+        <header class="hud-header">
+            <div>
+                <h1>QUANTITATIVE SWARM</h1>
+                <p class="subtitle">Black-Swan Radar // Live Voice Architecture</p>
+            </div>
+            <div class="status-indicator">
+                <span id="socket-status-dot" class="dot disconnected"></span>
+                <span id="socket-status-text">OFFLINE</span>
+            </div>
+        </header>
+
+        <main class="dashboard-grid">
+            <!-- Audio Visualizer Panel -->
+            <section class="panel visualizer-panel">
+                <div class="panel-header">
+                    <h2>ACOUSTIC TELEMETRY</h2>
+                </div>
+                <div class="canvas-container">
+                    <canvas id="visualizer"></canvas>
+                </div>
+                <div class="controls">
+                    <button id="connect-btn" class="btn primary-btn pulse">ESTABLISH UPLINK</button>
+                    <button id="disconnect-btn" class="btn danger-btn hidden">SEVER LINK</button>
+                </div>
+            </section>
+
+            <!-- Heavy-Tail Physics HUD -->
+            <section class="panel data-panel">
+                <div class="panel-header">
+                    <h2>TAIL-RISK PHYSICS</h2>
+                </div>
+                <div class="data-grid">
+                    <div class="data-card">
+                        <span class="label">EXPECTED 20% GAUSSIAN FREQ</span>
+                        <span class="value accent-red" id="gauss-widget">AWAITING SWARM...</span>
+                    </div>
+                    <div class="data-card">
+                        <span class="label">EXPECTED 20% STUDENT-T FREQ</span>
+                        <span class="value accent-green" id="student-widget">AWAITING SWARM...</span>
+                    </div>
+                    <div class="data-card">
+                        <span class="label">89-MATRIX SYSTEMIC RISK</span>
+                        <span class="value active" id="matrix-status">IDLE (AWAITING AI)</span>
+                    </div>
+                </div>
+                <div class="console-box" id="ai-transcript">
+                    <span class="log-prefix">> SYSTEM REBOOT... READY.</span><br>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Core App Logic -->
+    <script src="/static/app.js"></script>
+</body>
+</html>

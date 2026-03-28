@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from models.hardcoded_wrapper import attach_features, StrategyA, StrategyB, StrategyC, StrategyD, StrategyE, StrategyF, StrategyG
+from models.hardcoded_wrapper import attach_features, StrategyD, StrategyG
 from execution.openalice import calc_kelly
 
 def run_strategy(model, df):
@@ -101,8 +101,6 @@ def main():
 
     models = [
         StrategyD(entry_z=-3.5, exit_z=3.0, baseline_prob=0.75),
-        StrategyE(entry_z=-3.5, hold_days=60, baseline_prob=0.75),
-        StrategyF(shock_z=-3.5, decay_days=60, baseline_prob=0.75),
         StrategyG(entry_z=-3.5, exit_z=3.0, baseline_prob=0.75)
     ]
     

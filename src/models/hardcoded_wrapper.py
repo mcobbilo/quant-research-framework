@@ -61,38 +61,6 @@ def attach_features(df):
     
     return df
 
-class StrategyA:
-    def __init__(self):
-        self.name = "Strategy A: Bull Market Pullback"
-        
-    def evaluate(self, row):
-        # High VIX, Bull Market Trend, Severe short-term oversold condition
-        c1 = row['VIX'] > 25
-        c2 = row['SPY'] > row['SMA_200']
-        c3 = row['RSI_5'] < 30
-        return 1.0 if (c1 and c2 and c3) else 0.50
-
-class StrategyB:
-    def __init__(self):
-        self.name = "Strategy B: Volatility Exhaustion"
-        
-    def evaluate(self, row):
-        # Massive panic, but falling VIX + 3 days of localized price dumping
-        c1 = row['VIX'] > 35
-        c2 = row['VIX'] < row['VIX_prev']
-        c3 = (row['SPY_ret_prev_1'] < 0) and (row['SPY_ret_prev_2'] < 0) and (row['SPY_ret_prev_3'] < 0)
-        return 1.0 if (c1 and c2 and c3) else 0.50
-
-class StrategyC:
-    def __init__(self):
-        self.name = "Strategy C: Structurally Broken Vol Expansion"
-        
-    def evaluate(self, row):
-        # Fear + Severe deviation below 2 standard deviations
-        c1 = row['VIX'] > 20
-        c2 = row['SPY'] < row['Lower_BB']
-        return 1.0 if (c1 and c2) else 0.50
-
 class StrategyD:
     def __init__(self, entry_z=-3.0, exit_z=2.5, baseline_prob=0.75):
         self.entry_z = entry_z
@@ -128,100 +96,6 @@ class StrategyD:
                 self.in_trade = False
                 return self.baseline_prob
             return 1.0 # Continue holding through the chop
-
-class StrategyE:
-    def __init__(self, entry_z=-3.5, hold_days=60, baseline_prob=0.75):
-        self.entry_z = entry_z
-        self.hold_days = hold_days
-        self.baseline_prob = baseline_prob
-        self.name = f"Strategy E (Wavelet {hold_days}-Day Decay)"
-        self.days_in_trade = 0
-        self.in_trade = False
-        
-    def evaluate(self, row):
-        z = row['Z_Score']
-        
-        # Resting Baseline (1.0x SPY)
-        if not self.in_trade:
-            if z < self.entry_z:
-                self.in_trade = True
-                self.days_in_trade = 1
-                return 1.0 # Fire 2.0x Kelly leverage
-            return self.baseline_prob
-            
-        # Time-bound Hold
-        else:
-            self.days_in_trade += 1
-            if self.days_in_trade >= self.hold_days:
-                # The 60-day Wavelet ripple has mathematically decayed. Exit leverage.
-                self.in_trade = False
-                self.days_in_trade = 0
-                return self.baseline_prob
-            return 1.0 # Hold the leverage through the harmonic aftershock
-
-class StrategyF:
-    """
-    Damped Harmonic Oscillator
-    Models the 60-day volatility decay as an exponentially shrinking envelope.
-    Actively scalps the secondary ripples instead of statically holding.
-    """
-    def __init__(self, shock_z=-3.5, decay_days=60, baseline_prob=0.75):
-        self.shock_z = shock_z # Magnitude of initial crash trigger
-        self.decay_days = decay_days # Duration of the wavelet aftershock timeline
-        self.baseline_prob = baseline_prob
-        self.name = f"Strategy F (Harmonic Decay Scalper)"
-        
-        self.active_cycle = False
-        self.t = 0 # Days since crash (time variable for decay function)
-        self.in_trade = False
-        
-    def evaluate(self, row):
-        z = row['Z_Score']
-        import math
-        
-        # If the market is perfectly stable and we aren't tracking a crash cycle
-        if not self.active_cycle:
-            if z < self.shock_z:
-                # Boom. Earthquake trigger.
-                self.active_cycle = True
-                self.t = 1
-                self.in_trade = True # Buy the absolute bottom
-                return 1.0 # 2.0x Margin Leverage
-            return self.baseline_prob
-            
-        else:
-            # We are actively inside the 60-day harmonic decay window
-            self.t += 1
-            
-            # If 60-days pass, the cycle formally resets
-            if self.t >= self.decay_days:
-                self.active_cycle = False
-                self.in_trade = False
-                self.t = 0
-                return self.baseline_prob
-                
-            # Calculate the dynamically decaying bounds for today 't'
-            # Formula: Peak_Amplitude * e^(-lambda * t)
-            # We decay from an upper bound of +3.0 down to +0.2 over 60 days
-            # We decay from a lower bound of -3.5 down to -0.2 over 60 days
-            lambda_factor = 2.5 / self.decay_days # Calibrated exponential decay rate
-            
-            upper_bound = 3.0 * math.exp(-lambda_factor * self.t)
-            lower_bound = -3.5 * math.exp(-lambda_factor * self.t)
-            
-            if self.in_trade:
-                # We currently hold 2.0x Kelly leverage. Looking to scalp the bounce (sell)
-                if z > upper_bound:
-                    self.in_trade = False
-                    return self.baseline_prob # Sell the bounce, revert to 1.0x SPY
-                return 1.0 # Hold during the localized drop
-            else:
-                # We sold the previous bounce, waiting for the secondary 
-                # (but shallower) downward aftershock to re-enter!
-                if z < lower_bound:
-                    self.in_trade = True
-                    return 1.0 # Re-buy the secondary crash
-                return self.baseline_prob
 
 class StrategyG:
     """
@@ -269,4 +143,37 @@ class StrategyG:
                 self.in_trade = False
                 return self.baseline_prob
             return 1.0 # Continue holding through the chop
+
+class MetaStrategyClassifier:
+    """
+    Phase 97: Master Regime Classifier (Encyclopedia Matrix)
+    Determines absolute execution state based on VIX Term Structure and SMA Expansion.
+    """
+    def __init__(self):
+        # We explicitly mandate a 0.49 (Cash) resting state. During Panic or Chop, 
+        # we pull out of the SPY index and sit fully in 0.0x cash unless an extrema buy-dip signal is hit.
+        self.strategy_mean_reversion = StrategyD(baseline_prob=0.49) # Phase 9 SPY Extremum Dip
+        self.strategy_stat_arb = StrategyG(baseline_prob=0.49)       # Phase 14 Dr Copper Pairs Filter
+        
+    def evaluate_regime(self, row):
+        # 1. PANIC (VIX Backwardation OR Structural Crash)
+        if row.get('VIX_TERM_STRUCTURE_6M', 0) > 1.0 or row.get('SPY_PCT_FROM_200', 0) < -5.0:
+            return "MEAN_REVERSION_PANIC"
+        # 2. EXPANSION (VIX Contango AND Structural Expansion)
+        elif row.get('VIX_TERM_STRUCTURE_6M', 1) < 0.90 and row.get('SPY_PCT_FROM_200', 0) > 1.0:
+            return "TREND_FOLLOWING_EXPANSION"
+        # 3. SIDEWAYS (Baseline Float)
+        else:
+            return "STAT_ARB_CHOP"
+
+    def evaluate(self, row):
+        regime = self.evaluate_regime(row)
+        
+        if regime == "MEAN_REVERSION_PANIC":
+            return self.strategy_mean_reversion.evaluate(row)
+        elif regime == "STAT_ARB_CHOP":
+            return self.strategy_stat_arb.evaluate(row)
+        else:
+            # TREND_FOLLOWING_EXPANSION: Hold SPY at maximum baseline safety without exotic leverage.
+            return 1.0
 

@@ -1,0 +1,87 @@
+=======================================================
+     VVIX STRUCTURAL ANOMALY ISOLATION MATRIX
+=======================================================
+
+--- [ VVIX_PCT_SMA_5 ] : TOP 50 HIGHEST READINGS ---
+Average Extreme Value: 0.236
+-> Fwd  5-Day Return:   1.02%  (Win Rate: 66.0%)
+-> Fwd 10-Day Return:   1.27%  (Win Rate: 70.0%)
+-> Fwd 20-Day Return:   2.57%  (Win Rate: 82.0%)
+-> Fwd 60-Day Return:   5.13%  (Win Rate: 74.0%)
+
+--- [ VVIX_PCT_SMA_5 ] : BOTTOM 50 LOWEST READINGS ---
+Average Extreme Value: -0.143
+-> Fwd  5-Day Return:   0.33%  (Win Rate: 68.0%)
+-> Fwd 10-Day Return:   0.66%  (Win Rate: 58.0%)
+-> Fwd 20-Day Return:   1.79%  (Win Rate: 78.0%)
+-> Fwd 60-Day Return:   3.10%  (Win Rate: 82.0%)
+
+--- [ VVIX_PCT_SMA_10 ] : TOP 50 HIGHEST READINGS ---
+Average Extreme Value: 0.344
+-> Fwd  5-Day Return:   0.99%  (Win Rate: 76.0%)
+-> Fwd 10-Day Return:   1.88%  (Win Rate: 74.0%)
+-> Fwd 20-Day Return:   3.35%  (Win Rate: 90.0%)
+-> Fwd 60-Day Return:   6.17%  (Win Rate: 78.0%)
+
+--- [ VVIX_PCT_SMA_10 ] : BOTTOM 50 LOWEST READINGS ---
+Average Extreme Value: -0.173
+-> Fwd  5-Day Return:   0.64%  (Win Rate: 78.0%)
+-> Fwd 10-Day Return:   0.65%  (Win Rate: 62.0%)
+-> Fwd 20-Day Return:   1.07%  (Win Rate: 72.0%)
+-> Fwd 60-Day Return:   3.97%  (Win Rate: 76.0%)
+
+--- [ VVIX_PCT_SMA_20 ] : TOP 50 HIGHEST READINGS ---
+Average Extreme Value: 0.443
+-> Fwd  5-Day Return:   1.54%  (Win Rate: 78.0%)
+-> Fwd 10-Day Return:   2.16%  (Win Rate: 78.0%)
+-> Fwd 20-Day Return:   4.07%  (Win Rate: 88.0%)
+-> Fwd 60-Day Return:   7.48%  (Win Rate: 80.0%)
+
+--- [ VVIX_PCT_SMA_20 ] : BOTTOM 50 LOWEST READINGS ---
+Average Extreme Value: -0.190
+-> Fwd  5-Day Return:  -0.06%  (Win Rate: 62.0%)
+-> Fwd 10-Day Return:   0.18%  (Win Rate: 60.0%)
+-> Fwd 20-Day Return:   0.72%  (Win Rate: 68.0%)
+-> Fwd 60-Day Return:  -0.26%  (Win Rate: 72.0%)
+
+--- [ VVIX_PCT_SMA_50 ] : TOP 50 HIGHEST READINGS ---
+Average Extreme Value: 0.557
+-> Fwd  5-Day Return:   2.33%  (Win Rate: 76.0%)
+-> Fwd 10-Day Return:   3.41%  (Win Rate: 80.0%)
+-> Fwd 20-Day Return:   5.70%  (Win Rate: 84.0%)
+-> Fwd 60-Day Return:  10.42%  (Win Rate: 80.0%)
+
+--- [ VVIX_PCT_SMA_50 ] : BOTTOM 50 LOWEST READINGS ---
+Average Extreme Value: -0.211
+-> Fwd  5-Day Return:   0.43%  (Win Rate: 62.0%)
+-> Fwd 10-Day Return:   0.38%  (Win Rate: 64.0%)
+-> Fwd 20-Day Return:   1.70%  (Win Rate: 70.0%)
+-> Fwd 60-Day Return:  -0.67%  (Win Rate: 58.0%)
+
+--- [ VVIX_PCT_SMA_100 ] : TOP 50 HIGHEST READINGS ---
+Average Extreme Value: 0.641
+-> Fwd  5-Day Return:   1.91%  (Win Rate: 72.0%)
+-> Fwd 10-Day Return:   3.29%  (Win Rate: 76.0%)
+-> Fwd 20-Day Return:   5.06%  (Win Rate: 78.0%)
+-> Fwd 60-Day Return:  10.01%  (Win Rate: 74.0%)
+
+--- [ VVIX_PCT_SMA_100 ] : BOTTOM 50 LOWEST READINGS ---
+Average Extreme Value: -0.227
+-> Fwd  5-Day Return:   0.13%  (Win Rate: 60.0%)
+-> Fwd 10-Day Return:   0.16%  (Win Rate: 66.0%)
+-> Fwd 20-Day Return:   3.26%  (Win Rate: 78.0%)
+-> Fwd 60-Day Return:   2.35%  (Win Rate: 52.0%)
+
+--- [ VVIX_VIX_RATIO ] : TOP 50 HIGHEST READINGS ---
+Average Extreme Value: 9.674
+-> Fwd  5-Day Return:   0.62%  (Win Rate: 78.0%)
+-> Fwd 10-Day Return:   1.46%  (Win Rate: 94.0%)
+-> Fwd 20-Day Return:   2.08%  (Win Rate: 88.0%)
+-> Fwd 60-Day Return:   3.69%  (Win Rate: 78.0%)
+
+--- [ VVIX_VIX_RATIO ] : BOTTOM 50 LOWEST READINGS ---
+Average Extreme Value: 1.594
+-> Fwd  5-Day Return:   1.90%  (Win Rate: 66.0%)
+-> Fwd 10-Day Return:   3.30%  (Win Rate: 76.0%)
+-> Fwd 20-Day Return:   3.58%  (Win Rate: 70.0%)
+-> Fwd 60-Day Return:  -1.37%  (Win Rate: 44.0%)

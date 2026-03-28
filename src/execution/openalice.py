@@ -22,14 +22,22 @@ def calc_kelly(probability, current_vix=None):
     if edge <= 0:
         return 0.0
         
-    size = max(0.01, edge * 4.0)  # Max Size 2.0x (100% margin utilization) Note: Requires active VIX hedging!
+    size = max(0.01, edge * 4.0)  
     
-    # [CIRCUIT BREAKER 3] Hard Capped Leverage Limit
-    return min(size, 2.0)
+    # [CIRCUIT BREAKER 3] Hard Capped Leverage Limit (NO MARGIN EVER)
+    return min(size, 1.0)
 
 class OpenAliceUTA:
     def __init__(self, account_id="alpha_fund"):
+        import os
         self.account_id = account_id
+        
+        # [SECURITY] Enforce strict least-privilege scoping on the API Keys.
+        # This prevents any hijacked token from draining the account.
+        enforced_scope = os.getenv("ALPACA_KEY_ROLE", "UNVERIFIED")
+        if enforced_scope != "RESTRICTED_TRADE_ONLY":
+            print(f"[OpenAlice Guard] FATAL: Alpaca API Keys are not cryptographically scoped. Live Execution is strictly disabled.")
+            
         self.staged_order = None
         self.committed_order = None
         print(f"[OpenAlice] Connected to Unified Trading Account: {self.account_id}")

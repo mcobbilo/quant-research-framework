@@ -37,10 +37,10 @@ class WalkForwardXGBoost:
         X_train = train_df[features]
         y_train = train_df['Target']
         
-        # Initialize shallow bounds to prevent tree overfitting
+        # Initialize deepened bounds to test ML feature extraction
         model = xgb.XGBClassifier(
-            n_estimators=50,
-            max_depth=3,
+            n_estimators=80,
+            max_depth=9,
             learning_rate=0.05,
             objective='binary:logistic',
             eval_metric='logloss',

@@ -1,14 +1,9 @@
-# Agent Failure Catalog
-This document strictly indexes critical algorithmic and infrastructural failures to prevent future agents from wasting context or tokens re-testing broken hypotheses.
+_[[AutoDream Last Executed: 2026-03-26 18:38:28 UTC]]_
 
-## [F-001] N=10 Rolling Standard Deviation Mathematical Bound Limit
-- **Date:** 2026-03-20
-- **Attempt:** Triggering a Buy signal off a `-3.0` Z-Score using a 10-day rolling mean/STD window (`N=10`).
-- **Failure Mode:** Backtest yielded 0 trades. The strict mathematical maximum magnitude possible for a Z-Score in an `N=10` sample size is exactly `2.84`. 
-- **Resolution:** Never attempt a >= `3.0` Sigma trigger algorithm on any sample window smaller than `N=20`.
+# 🛑 Failure Catalog & Anti-Patterns
+> **STATE:** 2026-03-25 22:44:56 UTC | **DIRECTIVE:** Prevent redundant hypothesis execution.
 
-## [F-002] High-Frequency Scalping Friction (Strategy F)
-- **Date:** 2026-03-20
-- **Attempt:** Modeling a 60-day Damped Harmonic Oscillator to actively scalp the +3/-3 secondary recovering ripples immediately following a VIX crash.
-- **Failure Mode:** While mathematically sound (yielded 616% vs a static 574% 60-day hold), the active switching massively underperformed the Phase 9 "Single Swing" approach (1,088%). The transaction slippage (10bps) of scaling completely in and out of 2.0x margin leverage 3-4 separate times in 60 days destroyed the total alpha edge.
-- **Resolution:** Hedge-fund execution friction universally destroys intermediate high-frequency retail scalping. Always constrain model algorithms to clean, singular Macro-swings (Buy the absolute crash bottom, Hold through the ripples, Sell the absolute recovery crest).
+| ID | Vector | Failure State / Root Cause | Enforced Constraint |
+|:---|:---|:---|:---|
+| **F-001** | Stat Thresholds | `±3.0σ` unreachable on `N<20` (e.g., `N=10` max limit is `2.84σ`). | **REQUIRE** `N ≥ 20` for any `≥ 3.0σ` rolling triggers. |
+| **F-002** | Trade Friction | Scalping (e.g., DHO) bleeds via 10bps slippage, severely underperforming macro-swings (616% vs 1088%). | **BAN** high-frequency scalping. **ENFORCE** macro-swinging (buy crash → hold → sell crest). |

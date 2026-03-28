@@ -50,9 +50,9 @@ def run_multi_regime_backtest():
     
     # 3 Distinct AI Brains
     models = {
-        1: xgb.XGBClassifier(n_estimators=50, max_depth=3, learning_rate=0.05, n_jobs=-1, random_state=42),
-        0: xgb.XGBClassifier(n_estimators=50, max_depth=3, learning_rate=0.05, n_jobs=-1, random_state=42),
-        -1: xgb.XGBClassifier(n_estimators=50, max_depth=3, learning_rate=0.05, n_jobs=-1, random_state=42)
+        1: xgb.XGBClassifier(n_estimators=80, max_depth=9, learning_rate=0.05, n_jobs=-1, random_state=42),
+        0: xgb.XGBClassifier(n_estimators=80, max_depth=9, learning_rate=0.05, n_jobs=-1, random_state=42),
+        -1: xgb.XGBClassifier(n_estimators=80, max_depth=9, learning_rate=0.05, n_jobs=-1, random_state=42)
     }
     
     # Walk-Forward parameters

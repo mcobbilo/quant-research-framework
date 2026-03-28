@@ -1,0 +1,170 @@
+COMBINATION ANALYSIS: INSIGHT 1 (T10YFF min 50) AND INSIGHT N
+==========================================================================================
+Insight 1 + Insight 2 (VIX_TNX_PCT_SMA_200 max): 1 Occurrences Found!
+  ->  5D Return: +3.07%  (Win Rate: 100%)
+  -> 10D Return: +8.16%  (Win Rate: 100%)
+  -> 20D Return: +6.71%  (Win Rate: 100%)
+  -> 60D Return: +12.45%  (Win Rate: 100%)
+  -> Trigger Dates: 2024-08-05
+------------------------------------------------------------------------------------------
+Insight 1 + Insight 9 (VIX_MOVE_SPREAD_5D max): 2 Occurrences Found!
+  ->  5D Return: +3.09%  (Win Rate: 100%)
+  -> 10D Return: +3.14%  (Win Rate: 100%)
+  -> 20D Return: +2.55%  (Win Rate: 100%)
+  -> 60D Return: +10.28%  (Win Rate: 100%)
+  -> Trigger Dates: 2024-08-13, 2024-08-14
+------------------------------------------------------------------------------------------
+Insight 1 + Insight 14 (VIX_TNX_PCT_SMA_100 max): 1 Occurrences Found!
+  ->  5D Return: +3.07%  (Win Rate: 100%)
+  -> 10D Return: +8.16%  (Win Rate: 100%)
+  -> 20D Return: +6.71%  (Win Rate: 100%)
+  -> 60D Return: +12.45%  (Win Rate: 100%)
+  -> Trigger Dates: 2024-08-05
+------------------------------------------------------------------------------------------
+Insight 1 + Insight 15 (VIX_TNX_PCT_SMA_200 max): 1 Occurrences Found!
+  ->  5D Return: +3.07%  (Win Rate: 100%)
+  -> 10D Return: +8.16%  (Win Rate: 100%)
+  -> 20D Return: +6.71%  (Win Rate: 100%)
+  -> 60D Return: +12.45%  (Win Rate: 100%)
+  -> Trigger Dates: 2024-08-05
+------------------------------------------------------------------------------------------
+Insight 1 + Insight 17 (VVIX_PCT_SMA_50 max): 2 Occurrences Found!
+  ->  5D Return: +1.54%  (Win Rate: 100%)
+  -> 10D Return: +6.09%  (Win Rate: 100%)
+  -> 20D Return: +6.24%  (Win Rate: 100%)
+  -> 60D Return: +10.98%  (Win Rate: 100%)
+  -> Trigger Dates: 2024-08-02, 2024-08-05
+------------------------------------------------------------------------------------------
+Insight 1 + Insight 25 (T10YFF min): 51 Occurrences Found!
+  ->  5D Return: +0.85%  (Win Rate:  73%)
+  -> 10D Return: +1.61%  (Win Rate:  76%)
+  -> 20D Return: +3.49%  (Win Rate:  96%)
+  -> 60D Return: +8.87%  (Win Rate: 100%)
+  -> Trigger Dates: 2023-03-23, 2023-03-24, 2023-04-04, 2023-04-05, 2023-04-06, 2023-05-03, 2023-05-04, 2023-05-05, 2023-05-08, 2023-05-09, 2023-05-10, 2023-05-11, 2023-05-12, 2023-05-15, 2023-05-16, 2023-05-17, 2023-05-31, 2023-06-01, 2023-12-20, 2023-12-21, 2023-12-26, 2023-12-27, 2023-12-28, 2023-12-29, 2024-02-01, 2024-08-02, 2024-08-05, 2024-08-13, 2024-08-14, 2024-08-16, 2024-08-19, 2024-08-20, 2024-08-21, 2024-08-22, 2024-08-23, 2024-08-26, 2024-08-27, 2024-08-28, 2024-08-29, 2024-09-03, 2024-09-04, 2024-09-05, 2024-09-06, 2024-09-09, 2024-09-10, 2024-09-11, 2024-09-12, 2024-09-13, 2024-09-16, 2024-09-17, 2024-09-18
+------------------------------------------------------------------------------------------
+Insight 1 + Insight 30 (SPY_RSI_10 max): 1 Occurrences Found!
+  ->  5D Return: -0.41%  (Win Rate:   0%)
+  -> 10D Return: -1.96%  (Win Rate:   0%)
+  -> 20D Return: +1.85%  (Win Rate: 100%)
+  -> 60D Return: +5.23%  (Win Rate: 100%)
+  -> Trigger Dates: 2024-08-21
+------------------------------------------------------------------------------------------
+Insight 1 + Insight 33 (SPY_RSI_200 max): 2 Occurrences Found!
+  ->  5D Return: +0.81%  (Win Rate: 100%)
+  -> 10D Return: +0.17%  (Win Rate:  50%)
+  -> 20D Return: +1.08%  (Win Rate: 100%)
+  -> 60D Return: +7.21%  (Win Rate: 100%)
+  -> Trigger Dates: 2024-08-16, 2024-08-19
+------------------------------------------------------------------------------------------
+Insight 1 + Insight 34 (SPY_STOCH_20 max): 1 Occurrences Found!
+  ->  5D Return: +0.21%  (Win Rate: 100%)
+  -> 10D Return: -1.35%  (Win Rate:   0%)
+  -> 20D Return: +0.62%  (Win Rate: 100%)
+  -> 60D Return: +6.35%  (Win Rate: 100%)
+  -> Trigger Dates: 2024-08-19
+------------------------------------------------------------------------------------------
+Insight 1 + Insight 53 (VIX_TNX_PCT_SMA_5 max): 2 Occurrences Found!
+  ->  5D Return: +1.54%  (Win Rate: 100%)
+  -> 10D Return: +6.09%  (Win Rate: 100%)
+  -> 20D Return: +6.24%  (Win Rate: 100%)
+  -> 60D Return: +10.98%  (Win Rate: 100%)
+  -> Trigger Dates: 2024-08-02, 2024-08-05
+------------------------------------------------------------------------------------------
+Insight 1 + Insight 54 (VIX_TNX_PCT_SMA_10 max): 2 Occurrences Found!
+  ->  5D Return: +1.54%  (Win Rate: 100%)
+  -> 10D Return: +6.09%  (Win Rate: 100%)
+  -> 20D Return: +6.24%  (Win Rate: 100%)
+  -> 60D Return: +10.98%  (Win Rate: 100%)
+  -> Trigger Dates: 2024-08-02, 2024-08-05
+------------------------------------------------------------------------------------------
+Insight 1 + Insight 55 (VIX_TNX_PCT_SMA_50 max): 1 Occurrences Found!
+  ->  5D Return: +3.07%  (Win Rate: 100%)
+  -> 10D Return: +8.16%  (Win Rate: 100%)
+  -> 20D Return: +6.71%  (Win Rate: 100%)
+  -> 60D Return: +12.45%  (Win Rate: 100%)
+  -> Trigger Dates: 2024-08-05
+------------------------------------------------------------------------------------------
+Insight 1 + Insight 56 (SPY_TLT_DIFF_5D min): 1 Occurrences Found!
+  ->  5D Return: +3.07%  (Win Rate: 100%)
+  -> 10D Return: +8.16%  (Win Rate: 100%)
+  -> 20D Return: +6.71%  (Win Rate: 100%)
+  -> 60D Return: +12.45%  (Win Rate: 100%)
+  -> Trigger Dates: 2024-08-05
+------------------------------------------------------------------------------------------
+Insight 1 + Insight 57 (VIX_MOVE_SPREAD_10D max): 2 Occurrences Found!
+  ->  5D Return: -0.10%  (Win Rate:  50%)
+  -> 10D Return: -1.65%  (Win Rate:   0%)
+  -> 20D Return: +1.23%  (Win Rate: 100%)
+  -> 60D Return: +5.79%  (Win Rate: 100%)
+  -> Trigger Dates: 2024-08-19, 2024-08-21
+------------------------------------------------------------------------------------------
+Insight 1 + Insight 58 (VIX_MOVE_SPREAD_10D min): 1 Occurrences Found!
+  ->  5D Return: +3.07%  (Win Rate: 100%)
+  -> 10D Return: +8.16%  (Win Rate: 100%)
+  -> 20D Return: +6.71%  (Win Rate: 100%)
+  -> 60D Return: +12.45%  (Win Rate: 100%)
+  -> Trigger Dates: 2024-08-05
+------------------------------------------------------------------------------------------
+Insight 1 + Insight 62 (VIX_TNX_TSI max): 2 Occurrences Found!
+  ->  5D Return: +1.54%  (Win Rate: 100%)
+  -> 10D Return: +6.09%  (Win Rate: 100%)
+  -> 20D Return: +6.24%  (Win Rate: 100%)
+  -> 60D Return: +10.98%  (Win Rate: 100%)
+  -> Trigger Dates: 2024-08-02, 2024-08-05
+------------------------------------------------------------------------------------------
+Insight 1 + Insight 63 (VIX_TNX_PCT_SMA_10 max): 2 Occurrences Found!
+  ->  5D Return: +1.54%  (Win Rate: 100%)
+  -> 10D Return: +6.09%  (Win Rate: 100%)
+  -> 20D Return: +6.24%  (Win Rate: 100%)
+  -> 60D Return: +10.98%  (Win Rate: 100%)
+  -> Trigger Dates: 2024-08-02, 2024-08-05
+------------------------------------------------------------------------------------------
+Insight 1 + Insight 64 (VIX_TNX_PCT_SMA_20 max): 2 Occurrences Found!
+  ->  5D Return: +1.54%  (Win Rate: 100%)
+  -> 10D Return: +6.09%  (Win Rate: 100%)
+  -> 20D Return: +6.24%  (Win Rate: 100%)
+  -> 60D Return: +10.98%  (Win Rate: 100%)
+  -> Trigger Dates: 2024-08-02, 2024-08-05
+------------------------------------------------------------------------------------------
+Insight 1 + Insight 65 (VIX_TNX_PCT_SMA_50 max): 1 Occurrences Found!
+  ->  5D Return: +3.07%  (Win Rate: 100%)
+  -> 10D Return: +8.16%  (Win Rate: 100%)
+  -> 20D Return: +6.71%  (Win Rate: 100%)
+  -> 60D Return: +12.45%  (Win Rate: 100%)
+  -> Trigger Dates: 2024-08-05
+------------------------------------------------------------------------------------------
+Insight 1 + Insight 66 (SPY_TLT_DIFF_5D min): 1 Occurrences Found!
+  ->  5D Return: +3.07%  (Win Rate: 100%)
+  -> 10D Return: +8.16%  (Win Rate: 100%)
+  -> 20D Return: +6.71%  (Win Rate: 100%)
+  -> 60D Return: +12.45%  (Win Rate: 100%)
+  -> Trigger Dates: 2024-08-05
+------------------------------------------------------------------------------------------
+Insight 1 + Insight 68 (VIX_MOVE_SPREAD_10D min): 1 Occurrences Found!
+  ->  5D Return: +3.07%  (Win Rate: 100%)
+  -> 10D Return: +8.16%  (Win Rate: 100%)
+  -> 20D Return: +6.71%  (Win Rate: 100%)
+  -> 60D Return: +12.45%  (Win Rate: 100%)
+  -> Trigger Dates: 2024-08-05
+------------------------------------------------------------------------------------------
+Insight 1 + Insight 76 (VIX_TNX_PCT_SMA_10 min): 3 Occurrences Found!
+  ->  5D Return: +1.57%  (Win Rate: 100%)
+  -> 10D Return: +1.01%  (Win Rate:  67%)
+  -> 20D Return: +1.66%  (Win Rate: 100%)
+  -> 60D Return: +8.26%  (Win Rate: 100%)
+  -> Trigger Dates: 2024-08-14, 2024-08-16, 2024-08-19
+------------------------------------------------------------------------------------------
+Insight 1 + Insight 78 (VIX_MOVE_SPREAD_5D max): 2 Occurrences Found!
+  ->  5D Return: +3.09%  (Win Rate: 100%)
+  -> 10D Return: +3.14%  (Win Rate: 100%)
+  -> 20D Return: +2.55%  (Win Rate: 100%)
+  -> 60D Return: +10.28%  (Win Rate: 100%)
+  -> Trigger Dates: 2024-08-13, 2024-08-14
+------------------------------------------------------------------------------------------
+Insight 1 + Insight 79 (VIX_MOVE_SPREAD_5D min): 1 Occurrences Found!
+  ->  5D Return: +3.07%  (Win Rate: 100%)
+  -> 10D Return: +8.16%  (Win Rate: 100%)
+  -> 20D Return: +6.71%  (Win Rate: 100%)
+  -> 60D Return: +12.45%  (Win Rate: 100%)
+  -> Trigger Dates: 2024-08-05
+------------------------------------------------------------------------------------------

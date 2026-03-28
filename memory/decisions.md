@@ -1,12 +1,9 @@
-# Architectural Decisions (Agent Memory)
-This file tracks permanent, compounding structural implementations. All subsequent agent pipelines must verify logic against this framework.
+_[[AutoDream Last Executed: 2026-03-26 18:38:45 UTC]]_
 
-## [D-001] Security Circuit Breakers & Hash Verification (Phase 6)
-- **Date:** 2026-03-20
-- **Decision:** The foundational execution loop must include hard limits (`math.isnan` checks, `VIX > 100` bounds). The Python ML environment must strictly use `pip-tools` with cryptographically signed dependency hashes.
-- **Rationale:** Prevents catastrophic flash-crash runtime executions and mathematically eliminates arbitrary supply-chain hijack deployment vectors.
+# ARCHITECTURAL DECISIONS
+> **AutoDream Sync:** 2026-03-25 22:45:16 UTC | **Scope:** Structural Pipeline Logic Verification
 
-## [D-002] Fourier Aftershock with SPY Baseline (Phase 9)
-- **Date:** 2026-03-20
-- **Decision:** The algorithm rests securely in a 1.0x SPY un-levered position during all calm macro periods. It only initiates a 2.0x Kelly Margin position explicitly when the `Z_Score` falls below `-3.5` Sigma over a 20-day timeframe, and sells back down to 1.0x when the aftershock harmonic hits `+3.0` Sigma.
-- **Rationale:** Sitting entirely in Cash resulted in a baseline that vastly underperformed the 25-year S&P 500 benchmark (+638%). Resting in a 1.0x un-leveraged long mathematically guarantees core inflation capture, allowing the 2.0x Kelly margin allocation to function strictly as a hyper-efficient "Turbo" injection for maximum yield (+1,088%).
+| ID [Date] / Ph | Architecture & Implementation | Rationale |
+| :--- | :--- | :--- |
+| **D-001** `03-20`<br>*(Ph 6)* | **Security:** Trap `math.isnan`, halt on `VIX > 100`. Enforce `pip-tools` with crypto-signed dependency hashes. | Mitigate runtime flash-crashes & supply-chain hijacks. |
+| **D-002** `03-20`<br>*(Ph 9)* | **Fourier SPY Strategy:** Default 1.0x SPY. Scale to 2.0x Kelly Margin at 20d `Z_Score < -3.5σ`; revert to 1.0x at `+3.0σ`. | Optimize inflation capture (+638%) & Kelly efficiency (+1,088%). |

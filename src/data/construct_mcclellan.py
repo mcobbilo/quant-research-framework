@@ -19,7 +19,7 @@ def build_mcclellan():
     print(f"[MCO Matrix] Targeting {len(tickers)} unified equities across 25 years.")
     print(f"[MCO Matrix] Allocating parallel threads and bulk downloading (Takes ~1 minute)...")
     
-    data = yf.download(tickers, start="2000-01-01", end="2025-01-01", progress=False, group_by='column')
+    data = yf.download(tickers, start="2000-01-01", end=None, progress=False, group_by='column')
     
     print(f"[MCO Matrix] Dataset loaded. Synthesizing geometric differentials...")
     if isinstance(data.columns, pd.MultiIndex):
