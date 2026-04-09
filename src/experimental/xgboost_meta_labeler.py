@@ -16,7 +16,7 @@ def download_orthogonal_features(penalty_weight=49.0):
     conn = sqlite3.connect(db_path)
     
     query = """
-    SELECT Date, SPY_CLOSE, VIX_CLOSE, TLT_CLOSE, BAMLC0A0CM, GC_CLOSE,
+    SELECT Date, SPY_CLOSE, VIX_CLOSE, VUSTX_CLOSE, BAMLC0A0CM, GC_CLOSE,
            CVR3_BUY_SIGNAL, CVR3_SELL_SIGNAL, VIX_BB_WIDTH, VIX_DIST_UPPER, VIX_DIST_LOWER,
            VIX_MOVE_SPREAD_10D, Credit_Acceleration_30D, TED_Acceleration_30D, SPY_RSP_MOMENTUM_60D,
            Global_Liquidity_Velocity_21d, Fed_Liquidity_Surprise,
@@ -36,7 +36,7 @@ def download_orthogonal_features(penalty_weight=49.0):
     df["VIX_Spike"] = df["VIX"].pct_change(3)
     
     # 2. Flight to Safety Velocity
-    df["TLT_Momentum"] = df["TLT_CLOSE"].pct_change(10)
+    df["VUSTX_Momentum"] = df["VUSTX_CLOSE"].pct_change(10)
     
     # 3. High Yield Corporate Stress Spread (BAMLC0A0CM spreads)
     df["Credit_Velocity"] = df["BAMLC0A0CM"].pct_change(5)
@@ -45,19 +45,19 @@ def download_orthogonal_features(penalty_weight=49.0):
     df["Safe_Haven_Ratio"] = df["GC_CLOSE"] / df["SPY_CLOSE"]
     
     # [NEW] Phase 125 Tri-Modal Safe Haven Parameters
-    df["TLT"] = df["TLT_CLOSE"]
+    df["VUSTX"] = df["VUSTX_CLOSE"]
     df["GLD"] = df["GC_CLOSE"]
-    df["TLT_SMA200"] = df["TLT"].rolling(200).mean()
+    df["VUSTX_SMA200"] = df["VUSTX"].rolling(200).mean()
     df["GLD_SMA200"] = df["GLD"].rolling(200).mean()
     
     spy_log = np.log(df["SPY"] / df["SPY"].shift(1))
-    tlt_log = np.log(df["TLT"] / df["TLT"].shift(1))
+    vustx_log = np.log(df["VUSTX"] / df["VUSTX"].shift(1))
     gld_log = np.log(df["GLD"] / df["GLD"].shift(1))
     
-    df["CORR_SPY_TLT_63"] = spy_log.rolling(63).corr(tlt_log)
+    df["CORR_SPY_VUSTX_63"] = spy_log.rolling(63).corr(vustx_log)
     df["CORR_SPY_GLD_63"] = spy_log.rolling(63).corr(gld_log)
     
-    df["TLT_Mom_63"] = df["TLT"].pct_change(63)
+    df["VUSTX_Mom_63"] = df["VUSTX"].pct_change(63)
     df["GLD_Mom_63"] = df["GLD"].pct_change(63)
     
     # =========================================================================
@@ -67,7 +67,7 @@ def download_orthogonal_features(penalty_weight=49.0):
     # =========================================================================
     print("[Meta-Labeler] Executing Phase 119 Heavy-Tail transformations...")
     
-    for col in ["VIX_Spike", "TLT_Momentum", "Credit_Velocity", "Safe_Haven_Ratio", "VIX_MOVE_SPREAD_10D"]:
+    for col in ["VIX_Spike", "VUSTX_Momentum", "Credit_Velocity", "Safe_Haven_Ratio", "VIX_MOVE_SPREAD_10D"]:
         roll_mean = df[col].rolling(252).mean().shift(1)
         roll_std = df[col].rolling(252).std().shift(1)
         
@@ -108,7 +108,7 @@ def download_orthogonal_features(penalty_weight=49.0):
     _spy_sma20 = df["SPY"].rolling(20).mean()
     df["Insight_SPY_Oversold_Flush"] = (df["SPY"] < _spy_sma20 * 0.95).astype(int)
     
-    df["Insight_TLT_Capitulation"] = (df["TLT_Momentum"] < -0.05).astype(int)
+    df["Insight_VUSTX_Capitulation"] = (df["VUSTX_Momentum"] < -0.05).astype(int)
     # =========================================================================
     
     # Target: BLACK SWAN RADAR
@@ -129,7 +129,7 @@ def backtest_meta_labeler(penalty_weight=49.0):
     
     # Phase 132: Boruta "Shadow Noise" Execution
     # We strip outcome signals and base prices to avoid data leakage
-    drop_cols = ["Target_Crash", "SPY", "SPY_CLOSE", "TLT_CLOSE", "GC_CLOSE", "BAMLC0A0CM", "VIX_CLOSE"]
+    drop_cols = ["Target_Crash", "SPY", "SPY_CLOSE", "VUSTX_CLOSE", "GC_CLOSE", "BAMLC0A0CM", "VIX_CLOSE"]
     raw_features = [c for c in df.columns if c not in drop_cols and c != "Date"]
     
     # Extract the first 5-Year Train Block to discover universal structural truths cleanly
@@ -191,14 +191,14 @@ def backtest_meta_labeler(penalty_weight=49.0):
     
     capital = 100000.0
     shares_spy = 0.0
-    shares_tlt = 0.0
+    shares_vustx = 0.0
     shares_gld = 0.0
     
     dates = []
     equity_curve = []
     spy_curve = []
     spy_allocs = []
-    tlt_allocs = []
+    vustx_allocs = []
     gld_allocs = []
     cash_allocs = []
     
@@ -240,30 +240,30 @@ def backtest_meta_labeler(penalty_weight=49.0):
             today = test_data.iloc[j]
             prob = prob_crash[j]
             price_spy = today["SPY"]
-            price_tlt = today["TLT"]
+            price_vustx = today["VUSTX"]
             price_gld = today["GLD"]
             
             # MTM Valuation
-            portfolio_value = capital + (shares_spy * price_spy) + (shares_tlt * price_tlt) + (shares_gld * price_gld)
+            portfolio_value = capital + (shares_spy * price_spy) + (shares_vustx * price_vustx) + (shares_gld * price_gld)
             
             target_spy = 0.0
-            target_tlt = 0.0
+            target_vustx = 0.0
             target_gld = 0.0
             target_cash = 0.0
             
             # Phase 125: Tri-Modal Fractional Allocation routing
             if prob > 0.80: # 🚨 ABSOLUTE PANIC TRIGGER 🚨
                 # Tri-Modal Defense Screener Execution
-                tlt_valid = (today["TLT"] > today["TLT_SMA200"]) and (today["CORR_SPY_TLT_63"] < 0.0)
+                vustx_valid = (today["VUSTX"] > today["VUSTX_SMA200"]) and (today["CORR_SPY_VUSTX_63"] < 0.0)
                 gld_valid = (today["GLD"] > today["GLD_SMA200"]) and (today["CORR_SPY_GLD_63"] < 0.0)
                 
-                if tlt_valid and gld_valid:
-                    if today["TLT_Mom_63"] > today["GLD_Mom_63"]:
-                        target_tlt = portfolio_value
+                if vustx_valid and gld_valid:
+                    if today["VUSTX_Mom_63"] > today["GLD_Mom_63"]:
+                        target_vustx = portfolio_value
                     else:
                         target_gld = portfolio_value
-                elif tlt_valid:
-                    target_tlt = portfolio_value
+                elif vustx_valid:
+                    target_vustx = portfolio_value
                 elif gld_valid:
                     target_gld = portfolio_value
                 else:
@@ -277,21 +277,21 @@ def backtest_meta_labeler(penalty_weight=49.0):
                 
             # Delta Rebalancing
             delta_spy = target_spy - (shares_spy * price_spy)
-            delta_tlt = target_tlt - (shares_tlt * price_tlt)
+            delta_vustx = target_vustx - (shares_vustx * price_vustx)
             delta_gld = target_gld - (shares_gld * price_gld)
             
             rebalance_threshold = portfolio_value * 0.05
             
-            if abs(delta_spy) > rebalance_threshold or abs(delta_tlt) > rebalance_threshold or abs(delta_gld) > rebalance_threshold:
+            if abs(delta_spy) > rebalance_threshold or abs(delta_vustx) > rebalance_threshold or abs(delta_gld) > rebalance_threshold:
                 # Liquidations first
                 if delta_spy < 0:
                     capital -= delta_spy 
                     shares_spy += (delta_spy / price_spy)
                     capital -= abs(delta_spy) * 0.0002
-                if delta_tlt < 0:
-                    capital -= delta_tlt
-                    shares_tlt += (delta_tlt / price_tlt)
-                    capital -= abs(delta_tlt) * 0.0002
+                if delta_vustx < 0:
+                    capital -= delta_vustx
+                    shares_vustx += (delta_vustx / price_vustx)
+                    capital -= abs(delta_vustx) * 0.0002
                 if delta_gld < 0:
                     capital -= delta_gld
                     shares_gld += (delta_gld / price_gld)
@@ -302,10 +302,10 @@ def backtest_meta_labeler(penalty_weight=49.0):
                     shares_spy += (delta_spy / price_spy)
                     capital -= delta_spy
                     capital -= abs(delta_spy) * 0.0002
-                if delta_tlt > 0:
-                    shares_tlt += (delta_tlt / price_tlt)
-                    capital -= delta_tlt
-                    capital -= abs(delta_tlt) * 0.0002
+                if delta_vustx > 0:
+                    shares_vustx += (delta_vustx / price_vustx)
+                    capital -= delta_vustx
+                    capital -= abs(delta_vustx) * 0.0002
                 if delta_gld > 0:
                     shares_gld += (delta_gld / price_gld)
                     capital -= delta_gld
@@ -322,8 +322,8 @@ def backtest_meta_labeler(penalty_weight=49.0):
                 
                 if target_spy == portfolio_value:
                     shift_type = "ROTATION -> 100% SPY (Risk-On)"
-                elif target_tlt == portfolio_value:
-                    shift_type = "ROTATION -> 100% TLT (Tri-Modal Treasury Defense)"
+                elif target_vustx == portfolio_value:
+                    shift_type = "ROTATION -> 100% VUSTX (Tri-Modal Treasury Defense)"
                 elif target_gld == portfolio_value:
                     shift_type = "ROTATION -> 100% GLD (Tri-Modal Gold Defense)"
                 elif target_cash == portfolio_value:
@@ -346,13 +346,13 @@ def backtest_meta_labeler(penalty_weight=49.0):
                 print(msg)
                 # -----------------------------------------------------
             
-            mtm = capital + (shares_spy * price_spy) + (shares_tlt * price_tlt) + (shares_gld * price_gld)
+            mtm = capital + (shares_spy * price_spy) + (shares_vustx * price_vustx) + (shares_gld * price_gld)
             
             dates.append(today.name)
             equity_curve.append(mtm)
             spy_curve.append(price_spy)
             spy_allocs.append((shares_spy * price_spy) / mtm * 100)
-            tlt_allocs.append((shares_tlt * price_tlt) / mtm * 100)
+            vustx_allocs.append((shares_vustx * price_vustx) / mtm * 100)
             gld_allocs.append((shares_gld * price_gld) / mtm * 100)
             cash_allocs.append((capital / mtm) * 100)
             
@@ -362,7 +362,7 @@ def backtest_meta_labeler(penalty_weight=49.0):
         "Radar_Nav": equity_curve, 
         "SPY_Price": spy_curve,
         "SPY_Alloc": spy_allocs,
-        "TLT_Alloc": tlt_allocs,
+        "VUSTX_Alloc": vustx_allocs,
         "GLD_Alloc": gld_allocs,
         "Cash_Alloc": cash_allocs
     })
@@ -412,9 +412,9 @@ def backtest_meta_labeler(penalty_weight=49.0):
     
     fig, ax = plt.subplots(figsize=(14, 6))
     colors = ['gray', 'lightblue', 'gold', 'lightgreen']
-    labels = ['SPY Allocation', 'TLT Treasury Defense', 'GLD Gold Defense', '0% Yield Cash']
+    labels = ['SPY Allocation', 'VUSTX Treasury Defense', 'GLD Gold Defense', '0% Yield Cash']
     
-    ax.stackplot(results["Date"], results["SPY_Alloc"], results["TLT_Alloc"], results["GLD_Alloc"], results["Cash_Alloc"],
+    ax.stackplot(results["Date"], results["SPY_Alloc"], results["VUSTX_Alloc"], results["GLD_Alloc"], results["Cash_Alloc"],
                  labels=labels, colors=colors, alpha=0.8)
     
     ax.set_title(f'Phase 125: Swarm Tri-Modal Defensive Allocation ({penalty_weight}x Alpha)', fontsize=16, fontweight='bold')

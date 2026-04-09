@@ -48,10 +48,10 @@ def run_bulk_analysis():
         df[col] = (vix_tnx - vix_tnx_sma) / vix_tnx_sma
         feature_cols.append(col)
         
-    # 6. SPY vs TLT Diff
-    df['SPY_TLT_DIFF_5D'] = df['SPY_CLOSE'].pct_change(5) - df['TLT_CLOSE'].pct_change(5)
-    df['SPY_TLT_DIFF_10D'] = df['SPY_CLOSE'].pct_change(10) - df['TLT_CLOSE'].pct_change(10)
-    feature_cols.extend(['SPY_TLT_DIFF_5D', 'SPY_TLT_DIFF_10D'])
+    # 6. SPY vs VUSTX Diff
+    df['SPY_VUSTX_DIFF_5D'] = df['SPY_CLOSE'].pct_change(5) - df['VUSTX_CLOSE'].pct_change(5)
+    df['SPY_VUSTX_DIFF_10D'] = df['SPY_CLOSE'].pct_change(10) - df['VUSTX_CLOSE'].pct_change(10)
+    feature_cols.extend(['SPY_VUSTX_DIFF_5D', 'SPY_VUSTX_DIFF_10D'])
     
     macro_cols = ['BAMLC0A0CM', 'T10Y2Y', 'T10YFF', 'VIX_MOVE_SPREAD_5D', 'VIX_MOVE_SPREAD_10D',
                   'NYA200R', 'CPC', 'CPCE', 'MCO_PRICE', 'MCO_VOLUME',

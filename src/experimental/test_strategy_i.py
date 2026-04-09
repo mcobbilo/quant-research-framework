@@ -8,16 +8,16 @@ class StrategyI:
     Relaxed Heuristics Machine Learning Filter
     Strips away ML curve-fitting by expanding decimal exactness to structural integers.
     """
-    def __init__(self, ppo_thresh=35.0, ratio_cap=14.5, tlt_rot=-1.15):
+    def __init__(self, ppo_thresh=35.0, ratio_cap=14.5, vustx_rot=-1.15):
         self.ppo_thresh = ppo_thresh
         self.ratio_cap = ratio_cap
-        self.tlt_rot = tlt_rot
+        self.vustx_rot = vustx_rot
 
     def generate_signal(self, row):
         try:
             ppo = row['VIX_TNX_PPO_7']
             ratio = row['VIX_TNX_RATIO']
-            rot = row['SPY_TLT_DIFF_3D_ZSCORE']
+            rot = row['SPY_VUSTX_DIFF_3D_ZSCORE']
             
             if pd.isna(ppo) or pd.isna(ratio) or pd.isna(rot):
                 return 0.0
@@ -25,7 +25,7 @@ class StrategyI:
             # 1. Volatility is spiking heavily
             if ppo > self.ppo_thresh:
                 # 2. But the structure is sound (Ratio < 14.5) and capital has rotated (Z < -1.15)
-                if ratio < self.ratio_cap and rot < self.tlt_rot:
+                if ratio < self.ratio_cap and rot < self.vustx_rot:
                     return 1.0
             return 0.0
         except KeyError:

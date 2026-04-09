@@ -46,8 +46,8 @@ def generate_all_charts():
         vix_tnx_sma = vix_tnx.rolling(w).mean()
         df[f'VIX_TNX_PCT_SMA_{w}'] = (vix_tnx - vix_tnx_sma) / vix_tnx_sma
         
-    df['SPY_TLT_DIFF_5D'] = df['SPY_CLOSE'].pct_change(5) - df['TLT_CLOSE'].pct_change(5)
-    df['SPY_TLT_DIFF_10D'] = df['SPY_CLOSE'].pct_change(10) - df['TLT_CLOSE'].pct_change(10)
+    df['SPY_VUSTX_DIFF_5D'] = df['SPY_CLOSE'].pct_change(5) - df['VUSTX_CLOSE'].pct_change(5)
+    df['SPY_VUSTX_DIFF_10D'] = df['SPY_CLOSE'].pct_change(10) - df['VUSTX_CLOSE'].pct_change(10)
     
     md_path = '/Users/milocobb/.gemini/antigravity/brain/86f8d6d6-545f-43de-8268-7b50b6d1c47a/macro_insights.md'
     with open(md_path, 'r') as f:

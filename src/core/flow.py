@@ -1,12 +1,19 @@
+import torch
 from pydantic import BaseModel
 from crewai.flow import Flow, start, listen, router
 from data.crucix import execute_sweep_delta
+from core.deliberation import LatentCouncil
 
 class MarketState(BaseModel):
     market_data: dict = {}
+    latent_vector: torch.Tensor = None
+    consensus_score: float = 0.0
     probability: float = 0.0
     confidence: float = 1.0
     final_action: str = ""
+
+    class Config:
+        arbitrary_types_allowed = True
 
 from data.sweep_delta import cross_correlate
 from models.timesfm_wrapper import TimesFM2_5, tabular_preprocessing, format_for_timesfm, calculate_cdf_tail
@@ -16,15 +23,51 @@ from training.diloco import DiLoCoCluster
 
 class MarketForecastingFlow(Flow[MarketState]):
     
+    def __init__(self):
+        super().__init__()
+        # Initialize CALM Latent Council (feature dim = 4 from timesfm_wrapper preprocessing)
+        self.council = LatentCouncil(feature_dim=4, latent_dim=128)
     @start()
     def ingest_market_state(self):
         print("\n[Flow] 1. Triggering Crucix Terminal for Tiers 1-3 cross-correlated data...")
         raw_data = execute_sweep_delta()
         correlated_data = cross_correlate(raw_data)
         self.state.market_data = correlated_data
-        return self.state.market_data
+        return "data_ingested"
 
     @listen(ingest_market_state)
+    def latent_projection_and_deliberation(self):
+        print("\n[Flow] 1.5 Self-Organizing Latent Deliberation (Sequential Protocol)...")
+        features = tabular_preprocessing(self.state.market_data)
+        
+        # 2603.28990: Use a sequential protocol of autonomous agent steps
+        # Council of 5 self-organizing steps
+        council_size = 5
+        agent_latents = []
+        current_consensus = None
+        
+        for i in range(council_size):
+            # Each step 'sees' the current consensus and contributes its perspective
+            # In a full multi-agent system, this would be 5 distinct LLM/Agent calls
+            # Here we simulate with the EndogenousRoleAdapter in the council
+            agent_latent = self.council.project_agent_reasoning(
+                features, 
+                previous_consensus=current_consensus
+            )
+            agent_latents.append(agent_latent)
+            
+            # Update rolling consensus for the next agent in the sequence
+            current_consensus = torch.mean(torch.stack(agent_latents), dim=0)
+            
+        consensus_data = self.council.calculate_consensus(agent_latents)
+        
+        self.state.latent_vector = consensus_data["mean_latent"]
+        self.state.consensus_score = consensus_data["consensus_score"]
+        
+        print(f"[Flow] Self-Organized Consensus Score: {self.state.consensus_score:.4f}")
+        return "deliberation_complete"
+
+    @listen(latent_projection_and_deliberation)
     def execute_timesfm_forecast(self):
         print("\n[Flow] 2. Processing tabular features via fastai...")
         processed_tensors = tabular_preprocessing(self.state.market_data)
@@ -43,17 +86,16 @@ class MarketForecastingFlow(Flow[MarketState]):
 
     @router(execute_timesfm_forecast)
     def evaluate_confidence_and_route(self):
-        prob = getattr(self.state, 'probability', 0.0)
-        conf = getattr(self.state, 'confidence', 1.0)
+        consensus = getattr(self.state, 'consensus_score', 0.0)
+        latent = getattr(self.state, 'latent_vector', torch.zeros((1, 128)))
         
-        print(f"\n[Flow] 4. Routing dynamically based on prob: {prob:.2f}, conf: {conf:.3f}...")
+        print(f"\n[Flow] 4. Routing dynamically based on Agentic Consensus: {consensus:.4f}...")
         
-        if prob > 0.65 and conf < 0.1:
-            return "stage_trade"
-        elif prob < 0.35 and conf < 0.1:
-            return "stage_hedge"
-        else:
-            return "trigger_human_review"
+        # 2603.28990: Agents figure it out from the latent representation
+        # No more hardcoded 3.5 Sigma or Prob > 0.65 thresholds.
+        action = self.council.derive_action(latent, consensus)
+        
+        return action
 
     @listen("stage_trade")
     def execute_long_trade(self):

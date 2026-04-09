@@ -44,7 +44,7 @@ class WalkForwardXGBoost:
             learning_rate=0.05,
             objective='binary:logistic',
             eval_metric='logloss',
-            n_jobs=-1
+            n_jobs=1
         )
         
         # Iterative re-training per timestep mapping

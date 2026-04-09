@@ -3,7 +3,11 @@ import pandas as pd
 import datetime
 import json
 
-API_KEY = 'ecef78f092efcef79959d0d700c594f1'
+import os
+
+API_KEY = os.environ.get("FRED_API_KEY", "")
+if not API_KEY:
+    print("⚠️ WARNING: FRED_API_KEY environment variable not detected. Data pulls may fail.")
 
 def fetch_alfred_vintage(ticker):
     print(f"Requesting full ALFRED revision history for {ticker}...")

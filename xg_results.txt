@@ -1,0 +1,8 @@
+================================
+ XGBOOST CROSS-ASSET AUDIT
+================================
+
+[XGBOOST ENSEMBLE] INIT...
+Training Expanding Window...
+
+[XGBOOST COMPLETE] Asset Yield: 7.17x | Model Yield: 2.58x | Max DD: -34.18%

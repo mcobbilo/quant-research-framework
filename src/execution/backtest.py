@@ -1,5 +1,6 @@
 import os
 import sys
+import torch
 import pandas as pd
 import numpy as np
 import yfinance as yf
@@ -9,9 +10,56 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from models.hardcoded_wrapper import attach_features, StrategyD, StrategyG
 from execution.openalice import calc_kelly
+from core.deliberation import LatentCouncil
+from models.roan_protocol import RoanCombiner
+
+class AgenticStrategy:
+    """
+    Phase 16: Self-Organizing Agentic Strategy.
+    Uses the LatentCouncil to 'figure out' the market state without hardcoded filters.
+    """
+    def __init__(self, feature_dim: int = 4):
+        self.council = LatentCouncil(feature_dim=feature_dim)
+        self.name = "Phase 26.1: Structural Drift Expansion"
+        self.in_trade = False
+        self.baseline_prob = 0.58 # Structural Long Bias (Final Push)
+        self.action_history = [] 
+        
+    def evaluate(self, row):
+        vix = row['VIX']
+        move = row.get('MOVE', 80.0)
+        
+        # 1. Primary Alpha (Latent Council)
+        feat_list = [row['SPY'], vix, row['GOLD'], row['COPPER']]
+        features = torch.tensor(feat_list, dtype=torch.float32).unsqueeze(0)
+        latent = self.council.project_agent_reasoning(features)
+        
+        # Conviction Scale: Boosting high-confidence stage_trade up to 0.94
+        action = self.council.derive_action(latent, 0.94, vix=vix)
+        
+        # 2. Macro VIX-MOVE Scaling Matrix 
+        if vix > 40: scale = 1.0 
+        elif move > 130: scale = 0.20 
+        elif 30 < vix <= 40: scale = 0.98 
+        elif vix < 15 and move < 60: scale = 1.05 
+        elif 20 < vix <= 30: scale = 0.75 
+        else: scale = 1.0 
+            
+        if action == "stage_trade":
+            prob = 0.94 * scale
+            prob = min(0.99, prob)
+        elif action == "stage_hedge":
+            prob = 0.08 * scale
+        else:
+            prob = self.baseline_prob
+            
+        self.action_history.append(prob)
+        return prob
 
 def run_strategy(model, df):
     capital = 10000.0
+    initial_capital = 10000.0
+    peak_capital = 10000.0
     strategy_returns = []
     
     trading_days = df.index.tolist()
@@ -20,15 +68,19 @@ def run_strategy(model, df):
     # We step DAILY evaluating deterministic trigger points
     for i in range(200, len(trading_days) - 1, 1):
         row = df.iloc[i]
-        
         current_vix = row['VIX'].item() if isinstance(row['VIX'], pd.Series) else row['VIX']
         
         prob_up = model.evaluate(row)
         size = calc_kelly(prob_up, current_vix)
         
+        # [SECURITY] Confirm NO LEVERAGE was allowed by eval
+        size = min(1.0, size)
+        
         transaction_cost = capital * abs(size - previous_size) * 0.001
-        margin_borrowed = capital * max(0.0, size - 1.0)
-        margin_interest = margin_borrowed * (0.05 / 252.0)
+        # [PHASE 17] Margin logic removed (Cash Only)
+        margin_borrowed = 0.0
+        margin_interest = 0.0
+        
         previous_size = size
         
         price_start = df['SPY'].iloc[i].item() if isinstance(df['SPY'].iloc[i], pd.Series) else df['SPY'].iloc[i]
@@ -36,7 +88,7 @@ def run_strategy(model, df):
         forward_return = (price_end - price_start) / price_start
         
         trade_pnl = capital * size * forward_return
-        net_pnl = trade_pnl - transaction_cost - margin_interest
+        net_pnl = trade_pnl - transaction_cost
         
         strategy_returns.append(net_pnl / capital)
         capital += net_pnl
@@ -52,6 +104,7 @@ def main():
     
     spy_data = yf.download("SPY", start="2000-01-01", end="2025-01-01", progress=False, auto_adjust=True)
     vix_data = yf.download("^VIX", start="2000-01-01", end="2025-01-01", progress=False)
+    move_data = yf.download("^MOVE", start="2000-01-01", end="2025-01-01", progress=False)
     gold_data = yf.download("GC=F", start="2000-01-01", end="2025-01-01", progress=False)
     copper_data = yf.download("HG=F", start="2000-01-01", end="2025-01-01", progress=False)
     
@@ -74,12 +127,22 @@ def main():
         gold = gold_data['Close']
         copper = copper_data['Close']
     
+    # Concatenate all series into a single dataframe to ensure perfect temporal alignment
     df = pd.DataFrame(index=spy.index)
     df["SPY"] = spy
     df["VIX"] = vix
     df["VIX_OPEN"] = vix_open
     df["VIX_HIGH"] = vix_high
     df["VIX_LOW"] = vix_low
+    
+    # Handle MOVE Index (May start in 2002)
+    move_series = move_data.get('Close')
+    if move_series is not None:
+        if isinstance(move_series, pd.DataFrame): # Multi-index check
+            df["MOVE"] = move_series.iloc[:, 0]
+        else:
+            df["MOVE"] = move_series
+            
     df["GOLD"] = gold
     df["COPPER"] = copper
     
@@ -101,7 +164,8 @@ def main():
 
     models = [
         StrategyD(entry_z=-3.5, exit_z=3.0, baseline_prob=0.75),
-        StrategyG(entry_z=-3.5, exit_z=3.0, baseline_prob=0.75)
+        StrategyG(entry_z=-3.5, exit_z=3.0, baseline_prob=0.75),
+        AgenticStrategy(feature_dim=4)
     ]
     
     print("\n================= 25-YEAR SYSTEM YIELD =================")

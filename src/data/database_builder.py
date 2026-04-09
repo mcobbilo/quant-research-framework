@@ -7,7 +7,12 @@ import warnings
 
 warnings.filterwarnings('ignore')
 
-FRED_API_KEY = 'ecef78f092efcef79959d0d700c594f1'
+from dotenv import load_dotenv
+load_dotenv()
+
+FRED_API_KEY = os.environ.get("FRED_API_KEY", "")
+if not FRED_API_KEY:
+    print("⚠️ WARNING: FRED_API_KEY environment variable not detected. Data pulls may fail.")
 
 def fetch_alfred_vintage(ticker):
     import time
@@ -105,13 +110,21 @@ def calc_vwap_rolling(df, prefix, period=20):
     return cum_vol_price / cum_vol
 
 def build_database():
+    import subprocess
+    print("[DB Architect] Automatically syncing daily Market Breadth via breadth_scraper.py...")
+    try:
+        scraper_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'breadth_scraper.py')
+        subprocess.run(["python3", scraper_path], check=True)
+    except Exception as e:
+        print(f"[DB Architect] Warning: Market Breadth sync encountered an issue: {e}")
+
     print("[DB Architect] Establishing local SQLite connection...")
     db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'market_data.db')
     conn = sqlite3.connect(db_path)
     
-    print("[DB Architect] Fetching 25-Year Core Market Data (+TLT, +TNX, +CL=F, +MOVE, Volatility Term Structure)...")
+    print("[DB Architect] Fetching 25-Year Core Market Data (+VUSTX, +TNX, +CL=F, +MOVE, Volatility Term Structure)...")
     # Phase 134: Global FX Integration (DXY & USD/JPY)
-    tickers = ["SPY", "^VIX", "^VIX3M", "^VIX6M", "GC=F", "HG=F", "CL=F", "TLT", "^TNX", "^MOVE", "IWM", "^VVIX", "^SKEW", "RSP", "DX-Y.NYB", "JPY=X"]
+    tickers = ["SPY", "^VIX", "^VIX3M", "^VIX6M", "GLD", "HG=F", "CL=F", "VUSTX", "^TNX", "^MOVE", "IWM", "^VVIX", "^SKEW", "RSP", "DX-Y.NYB", "JPY=X"]
     
     # Download the core data array simultaneously
     data = yf.download(tickers, start="2000-01-01", end=None, group_by='ticker', auto_adjust=True, progress=False)
@@ -142,7 +155,11 @@ def build_database():
         except Exception as e:
             print(f"Error parsing {ticker}: {e}")
             
+    # Drop non-equities days (e.g. Sunday nights or timezone leakages from forex/futures like JPY=X)
+    df.dropna(subset=['SPY_CLOSE'], inplace=True)
+    
     df.ffill(inplace=True)
+    df.bfill(inplace=True) # Data Engineering Fix: Backfill pre-2009 assets (VIX6M, VUSTX) so they aren't destroyed
     
     import numpy as np
     print("[DB Architect] Synthesizing Proprietary SPY Candlestick Rejection Vectors...")
@@ -152,22 +169,12 @@ def build_database():
     df['SPY_toptail'] = (df['SPY_HIGH'] - open_close_max) / df['SPY_HIGH']
     df['SPY_revtail'] = (open_close_min - df['SPY_LOW']) / open_close_min
     
-    df['SPY_Hollow_Red'] = np.where(
-        (df['SPY_CLOSE'] < df['SPY_CLOSE'].shift(6)) & 
-        (df['SPY_CLOSE'] < df['SPY_CLOSE'].shift(1)) &
-        (df['SPY_OPEN'] < df['SPY_CLOSE'].shift(1)) &
-        (df['SPY_CLOSE'] > df['SPY_OPEN']) & 
-        (df['SPY_toptail'] < df['SPY_revtail']) &
-        (df['SPY_CLOSE'] > df['SPY_CLOSE'].shift(20)), 
-        1, 0
-    )
-    
     df.dropna(inplace=True)
     
     print("[DB Architect] Calculating True Strength Indicators (TSI)...")
     df['SPY_TSI'] = calc_tsi(df['SPY_CLOSE'])
     df['VIX_TSI'] = calc_tsi(df['VIX_CLOSE'])
-    df['TLT_TSI'] = calc_tsi(df['TLT_CLOSE'])
+    df['VUSTX_TSI'] = calc_tsi(df['VUSTX_CLOSE'])
     
     print("[DB Architect] Synthesizing VIX/TNX Cross-Asset Derivatives...")
     df['VIX_TNX_RATIO'] = df['VIX_CLOSE'] / df['TNX_CLOSE']
@@ -199,27 +206,25 @@ def build_database():
     df['SPY_SMA_200'] = df['SPY_CLOSE'].rolling(200).mean()
     df['SPY_PCT_FROM_200'] = ((df['SPY_CLOSE'] - df['SPY_SMA_200']) / df['SPY_SMA_200']) * 100
     
-    # TLT 200-Day
-    df['TLT_SMA_200'] = df['TLT_CLOSE'].rolling(200).mean()
-    df['TLT_PCT_FROM_200'] = ((df['TLT_CLOSE'] - df['TLT_SMA_200']) / df['TLT_SMA_200']) * 100
+    # VUSTX 200-Day
+    df['VUSTX_SMA_200'] = df['VUSTX_CLOSE'].rolling(200).mean()
+    df['VUSTX_PCT_FROM_200'] = ((df['VUSTX_CLOSE'] - df['VUSTX_SMA_200']) / df['VUSTX_SMA_200']) * 100
     
     # VIX/TNX 200-Day
     df['VIX_TNX_SMA_200'] = df['VIX_TNX_RATIO'].rolling(200).mean()
     df['VIX_TNX_PCT_FROM_200'] = ((df['VIX_TNX_RATIO'] - df['VIX_TNX_SMA_200']) / df['VIX_TNX_SMA_200']) * 100
     
-    print("[DB Architect] Computing 12-26-9 PPO Arrays for SPY, TLT, and Gold (GC)...")
+    print("[DB Architect] Computing 12-26-9 PPO Arrays for SPY, VUSTX, and Gold (GC)...")
     df['SPY_PPO_LINE'], df['SPY_PPO_SIGNAL'], df['SPY_PPO_HIST'] = calc_ppo(df['SPY_CLOSE'])
-    df['TLT_PPO_LINE'], df['TLT_PPO_SIGNAL'], df['TLT_PPO_HIST'] = calc_ppo(df['TLT_CLOSE'])
-    if 'GC_CLOSE' in df.columns:
-        df['GC_PPO_LINE'], df['GC_PPO_SIGNAL'], df['GC_PPO_HIST'] = calc_ppo(df['GC_CLOSE'])
+    df['VUSTX_PPO_LINE'], df['VUSTX_PPO_SIGNAL'], df['VUSTX_PPO_HIST'] = calc_ppo(df['VUSTX_CLOSE'])
+    if 'GLD_CLOSE' in df.columns:
+        df['GLD_PPO_LINE'], df['GLD_PPO_SIGNAL'], df['GLD_PPO_HIST'] = calc_ppo(df['GLD_CLOSE'])
         
     print("[DB Architect] Computing 20-Period Chaikin Money Flow (CMF) Arrays...")
     if 'SPY_VOLUME' in df.columns:
         df['SPY_CMF'] = calc_cmf(df, 'SPY')
-    if 'TLT_VOLUME' in df.columns:
-        df['TLT_CMF'] = calc_cmf(df, 'TLT')
-    if 'GC_VOLUME' in df.columns:
-        df['GC_CMF'] = calc_cmf(df, 'GC')
+    if 'GLD_VOLUME' in df.columns:
+        df['GLD_CMF'] = calc_cmf(df, 'GLD')
     
     print("[DB Architect] Mapping Macro Credit Spreads and Yield Curves from FRED...")
     try:
@@ -242,17 +247,17 @@ def build_database():
         diff_move = df['MOVE_CLOSE'].pct_change(periods=period) - df['VIX_CLOSE'].pct_change(periods=period)
         df[f'VIX_MOVE_SPREAD_{period}D'] = diff_move
         
-    print("[DB Architect] Compiling SPY vs TLT Relative Performance \u0026 Z-Scores...")
+    print("[DB Architect] Compiling SPY vs VUSTX Relative Performance \u0026 Z-Scores...")
     for period in [3, 5, 7]:
         spy_ret = df['SPY_CLOSE'].pct_change(periods=period)
-        tlt_ret = df['TLT_CLOSE'].pct_change(periods=period)
-        diff = spy_ret - tlt_ret
-        df[f'SPY_TLT_DIFF_{period}D'] = diff
+        vustx_ret = df['VUSTX_CLOSE'].pct_change(periods=period)
+        diff = spy_ret - vustx_ret
+        df[f'SPY_VUSTX_DIFF_{period}D'] = diff
         
         # Calculate 252-day (1-Year) rolling Z-Score for the performance offset
         r_mean = diff.rolling(window=252).mean()
         r_std = diff.rolling(window=252).std()
-        df[f'SPY_TLT_DIFF_{period}D_ZSCORE'] = (diff - r_mean) / r_std
+        df[f'SPY_VUSTX_DIFF_{period}D_ZSCORE'] = (diff - r_mean) / r_std
         
     print("[DB Architect] Computing Phase 128 Global Macro Accelerations & Jerk...")
     if 'BAMLC0A0CM' in df.columns:
@@ -269,10 +274,10 @@ def build_database():
         df['SPY_RSP_MOMENTUM_60D'] = df['SPY_RSP_RATIO'].pct_change(periods=60)
         
     print("[DB Architect] Synthesizing Phase 96: Dr. Copper vs Gold Cointegration Arbitrage...")
-    if 'GC_CLOSE' in df.columns and 'HG_CLOSE' in df.columns:
-        df['GC_HG_RATIO'] = df['GC_CLOSE'] / df['HG_CLOSE']
-        df['GC_HG_ZSCORE_60'] = (df['GC_HG_RATIO'] - df['GC_HG_RATIO'].rolling(60).mean()) / df['GC_HG_RATIO'].rolling(60).std()
-        df['GC_HG_ZSCORE_252'] = (df['GC_HG_RATIO'] - df['GC_HG_RATIO'].rolling(252).mean()) / df['GC_HG_RATIO'].rolling(252).std()
+    if 'GLD_CLOSE' in df.columns and 'HG_CLOSE' in df.columns:
+        df['GLD_HG_RATIO'] = df['GLD_CLOSE'] / df['HG_CLOSE']
+        df['GLD_HG_ZSCORE_60'] = (df['GLD_HG_RATIO'] - df['GLD_HG_RATIO'].rolling(60).mean()) / df['GLD_HG_RATIO'].rolling(60).std()
+        df['GLD_HG_ZSCORE_252'] = (df['GLD_HG_RATIO'] - df['GLD_HG_RATIO'].rolling(252).mean()) / df['GLD_HG_RATIO'].rolling(252).std()
         
     print("[DB Architect] Synthesizing Phase 121 Absolute Black-Swan Forensics...")
     if 'IWM_CLOSE' in df.columns and 'SPY_CLOSE' in df.columns:
@@ -291,7 +296,9 @@ def build_database():
         'NYA200R': '_NYA200R.csv',
         'CPC': '_cpc.csv',
         'CPCE': '_cpce.csv',
-        'NYADU': '_NYADu.csv'
+        'NYADU': '_NYADu.csv',
+        'NYHGH': '_NYhgh.csv',
+        'NYLOW': '_NYlow.csv'
     }
     
     base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -341,11 +348,20 @@ def build_database():
         breadth_df['CPCE_SMA_5'] = breadth_df['CPCE'].rolling(window=5).mean()
         breadth_df['CPCE_5D_ROC'] = breadth_df['CPCE_SMA_5'].pct_change(periods=5) * 100
         
-    # Standardize Index Names
+    print(" -> Synthesizing 52-Week High/Low Momentum physics...")
+    if 'NYHGH' in breadth_df.columns and 'NYLOW' in breadth_df.columns:
+        # Raw Net Highs/Lows
+        breadth_df['NET_NYHGH_NYLOW'] = breadth_df['NYHGH'] - breadth_df['NYLOW']
+        # 10-Day Smoothed Rotational Index
+        breadth_df['NET_NYHGH_NYLOW_SMA_10'] = breadth_df['NET_NYHGH_NYLOW'].rolling(window=10).mean()
+        # High/Low Ratio Percentage (Normalization)
+        total_issues = breadth_df['NYHGH'] + breadth_df['NYLOW'] + 1
+        breadth_df['NET_HIGHS_LOWS_PCT'] = breadth_df['NET_NYHGH_NYLOW'] / total_issues
+        
     breadth_df.index.name = 'Date'
     df = df.join(breadth_df, how='left')
-        
-    # Extract ALFRED API First-Vintages natively
+    df.ffill(inplace=True)
+    df.bfill(inplace=True) # Data Engineering Fix: Backfill Breadth missing days
     alfred_tickers = [
         'RECPROUSM156N', 'BOGMBASE', 'WALCL', 'TREAST', 
         'TSIFRGHT', 'JPNASSETS', 'ECBASSETSW', 
@@ -386,6 +402,7 @@ def build_database():
     # Merge FRED ALFRED data into primary timeline and strictly fill-forward older prints
     df = df.join(alfred_df, how='left')
     df.ffill(inplace=True)
+    df.bfill(inplace=True) # Data Engineering Fix: Backfill missing FRED macroeconomic histories
     
     print("[DB Architect] Synthesizing User-Requested ALFRED Matrix Derivatives...")
     
@@ -430,7 +447,7 @@ def build_database():
     
     # 1. TRIX (15-Day Array)
     df['SPY_TRIX_15'] = calc_trix(df['SPY_CLOSE'], period=15)
-    df['TLT_TRIX_15'] = calc_trix(df['TLT_CLOSE'], period=15)
+    df['VUSTX_TRIX_15'] = calc_trix(df['VUSTX_CLOSE'], period=15)
     
     # 2. Donchian Channels (20-Day Array) -> Normalized to percentage offsets for Stationary AI compatibility
     df['SPY_DONCHIAN_UPPER'], df['SPY_DONCHIAN_LOWER'] = calc_donchian(df['SPY_HIGH'], df['SPY_LOW'], period=20)
@@ -450,15 +467,15 @@ def build_database():
         df['REAL_YIELD_10Y'] = df['TNX_CLOSE'] - df['T10YIE']
         
     print("[DB Architect] Mapping Absolute 63-Day Rolling Correlated Collapse Regimes...")
-    if 'SPY_CLOSE' in df.columns and 'TLT_CLOSE' in df.columns and 'GC_CLOSE' in df.columns:
+    if 'SPY_CLOSE' in df.columns and 'VUSTX_CLOSE' in df.columns and 'GLD_CLOSE' in df.columns:
         spy_log_ret = np.log(df['SPY_CLOSE'] / df['SPY_CLOSE'].shift(1))
-        tlt_log_ret = np.log(df['TLT_CLOSE'] / df['TLT_CLOSE'].shift(1))
-        gc_log_ret = np.log(df['GC_CLOSE'] / df['GC_CLOSE'].shift(1))
+        vustx_log_ret = np.log(df['VUSTX_CLOSE'] / df['VUSTX_CLOSE'].shift(1))
+        gc_log_ret = np.log(df['GLD_CLOSE'] / df['GLD_CLOSE'].shift(1))
         
-        corr_spy_tlt = spy_log_ret.rolling(63).corr(tlt_log_ret)
+        corr_spy_vustx = spy_log_ret.rolling(63).corr(vustx_log_ret)
         corr_spy_gc = spy_log_ret.rolling(63).corr(gc_log_ret)
         
-        df['CORR_SPY_TLT_63_ZSCORE'] = (corr_spy_tlt - corr_spy_tlt.rolling(252).mean()) / corr_spy_tlt.rolling(252).std()
+        df['CORR_SPY_VUSTX_63_ZSCORE'] = (corr_spy_vustx - corr_spy_vustx.rolling(252).mean()) / corr_spy_vustx.rolling(252).std()
         df['CORR_SPY_GLD_63_ZSCORE'] = (corr_spy_gc - corr_spy_gc.rolling(252).mean()) / corr_spy_gc.rolling(252).std()
         
     print("[DB Architect] Extracting Phase 123 CVR3 Absolute Geometric Vectors...")
@@ -474,26 +491,60 @@ def build_database():
         df['VIX_DIST_LOWER'] = (df['VIX_CLOSE'] - df['VIX_BB_LOWER']) / df['VIX_BB_LOWER']
         df['VIX_BB_WIDTH'] = (df['VIX_BB_UPPER'] - df['VIX_BB_LOWER']) / df['VIX_SMA20']
 
-        # CVR3 Tri-Confluence Exhaustion Triggers
-        vix_ema10 = df['VIX_CLOSE'].ewm(span=10, adjust=False).mean()
-        vix_ppo = ((df['VIX_CLOSE'] - vix_ema10) / vix_ema10) * 100
-        
-        buy_spatial = df['VIX_LOW'] > vix_ema10
-        buy_magnitude = vix_ppo >= 10.0
-        buy_morphology = df['VIX_CLOSE'] < df['VIX_OPEN']
-        
-        df['CVR3_BUY_SIGNAL'] = ((buy_spatial.rolling(3).max() == 1) & 
-                                 (buy_magnitude.rolling(3).max() == 1) & 
-                                 (buy_morphology.rolling(3).max() == 1)).astype(int)
-                                 
-        sell_spatial = df['VIX_HIGH'] < vix_ema10
-        sell_magnitude = vix_ppo <= -10.0
-        sell_morphology = df['VIX_CLOSE'] > df['VIX_OPEN']
-        
-        df['CVR3_SELL_SIGNAL'] = ((sell_spatial.rolling(3).max() == 1) & 
-                                  (sell_magnitude.rolling(3).max() == 1) & 
-                                  (sell_morphology.rolling(3).max() == 1)).astype(int)
+
+    print("[DB Architect] Extracting Phase 140 Advanced Volatility and structural metrics...")
+    # 1. VIX/VVIX Ratio Z-Score
+    if 'VIX_CLOSE' in df.columns and 'VVIX_CLOSE' in df.columns:
+        # Note: VIX_VVIX_RATIO is calculated on line 286
+        df['VIX_VVIX_RATIO_Z'] = (df['VIX_VVIX_RATIO'] - df['VIX_VVIX_RATIO'].rolling(252).mean()) / df['VIX_VVIX_RATIO'].rolling(252).std()
     
+    # 2. Sent_CrossAsset_Vol_Ratio & 0DTE_Repression
+    if 'MOVE_CLOSE' in df.columns and 'VIX_CLOSE' in df.columns:
+        df['SENT_CROSSASSET_VOL_RATIO'] = df['MOVE_CLOSE'] / df['VIX_CLOSE']
+        vol_spread = df['MOVE_CLOSE'] - df['VIX_CLOSE']
+        df['SENT_0DTE_REPRESSION_Z'] = (vol_spread - vol_spread.rolling(20).mean()) / vol_spread.rolling(20).std()
+        
+    # 3. VIX Term Structure Z-Score
+    if 'VIX_TERM_STRUCTURE_3M' in df.columns:
+        df['VIX_VXV_RATIO_Z'] = (df['VIX_TERM_STRUCTURE_3M'] - df['VIX_TERM_STRUCTURE_3M'].rolling(252).mean()) / df['VIX_TERM_STRUCTURE_3M'].rolling(252).std()
+        
+    # 4. Relative Volatility velocity
+    if 'SPY_CLOSE' in df.columns:
+        spy_log_ret_local = np.log(df['SPY_CLOSE'] / df['SPY_CLOSE'].shift(1))
+        spy_vol_21 = spy_log_ret_local.rolling(21).std() * np.sqrt(252)
+        spy_vol_252 = spy_log_ret_local.rolling(252).std() * np.sqrt(252)
+        df['SPY_VOL_RATIO_21_252'] = spy_vol_21 / spy_vol_252.replace(0, np.nan)
+        
+        spy_mom_21 = spy_log_ret_local.rolling(21).sum()
+        spy_mom_5 = spy_log_ret_local.rolling(5).sum()
+        df['SPY_ACCEL_MOM'] = spy_mom_21 - spy_mom_5
+        
+        # ATR Percentage
+        high_low = df['SPY_HIGH'] - df['SPY_LOW']
+        high_close = (df['SPY_HIGH'] - df['SPY_CLOSE'].shift(1)).abs()
+        low_close = (df['SPY_LOW'] - df['SPY_CLOSE'].shift(1)).abs()
+        ranges = pd.concat([high_low, high_close, low_close], axis=1)
+        true_range = ranges.max(axis=1)
+        df['SPY_ATR_14'] = true_range.rolling(14).mean()
+        df['SPY_ATR_PCT'] = df['SPY_ATR_14'] / df['SPY_CLOSE']
+        
+    # 5. Market Breadth Z-Score
+    if 'RSP_CLOSE' in df.columns and 'SPY_CLOSE' in df.columns:
+        # RSP / SPY formulation required by user
+        rsp_spy_ratio = df['RSP_CLOSE'] / df['SPY_CLOSE']
+        df['MARKET_BREADTH_ZSCORE_252D'] = (rsp_spy_ratio - rsp_spy_ratio.rolling(252).mean()) / rsp_spy_ratio.rolling(252).std()
+        
+    # 6. Cross Asset Hedge Stress
+    if 'VIX_TNX_RATIO' in df.columns:
+        df['VIX_TO_10Y_MOM21'] = df['VIX_TNX_RATIO'] - df['VIX_TNX_RATIO'].rolling(21).mean()
+        
+    # 7. Raw 63-day Correlation
+    if 'SPY_CLOSE' in df.columns and 'VUSTX_CLOSE' in df.columns:
+        spy_log_ret_local = np.log(df['SPY_CLOSE'] / df['SPY_CLOSE'].shift(1))
+        vustx_log_ret_local = np.log(df['VUSTX_CLOSE'] / df['VUSTX_CLOSE'].shift(1))
+        df['CORR_SPY_VUSTX_63'] = spy_log_ret_local.rolling(63).corr(vustx_log_ret_local)
+
+
     # Drop rows that contain NaNs due to TSI EMA spin-ups and rolling windows
     null_counts = df.isnull().sum()
     print("[DB Architect] NaN distribution before dropna:")
@@ -504,6 +555,28 @@ def build_database():
     df.index = pd.to_datetime(df.index)
     if hasattr(df.index, 'tz') and df.index.tz is not None:
         df.index = df.index.tz_localize(None)
+        
+    # =====================================================================
+    # THE DATA GUILLOTINE: Post-Calculation Data Pruning
+    # =====================================================================
+    print("[DB Architect] Executing Data Guillotine to remove early structural backfills and useless volumes...")
+    
+    # 1. The Row Cut: Slice away all time history prior to 2008-01-03
+    # MAs (e.g. SMA_200) calculated above stay valid, having used 2000-2007 data prior to this string slicing.
+    df = df[df.index >= '2008-01-03']
+    
+    # 2. The Column Cut: Drop inherently zero-volume or heavily backfilled/inconsistent columns
+    cols_to_drop = [
+        'VIX_VOLUME', 'VIX3M_VOLUME', 'VIX6M_VOLUME', 'HG_VOLUME', 
+        'VUSTX_VOLUME', 'TNX_VOLUME', 'MOVE_VOLUME', 'DXY_VOLUME', 'VVIX_VOLUME', 
+        'SKEW_VOLUME', 'JPY_VOLUME', 
+    ]
+    
+    existing_cols_to_drop = [c for c in cols_to_drop if c in df.columns]
+    if existing_cols_to_drop:
+        df.drop(columns=existing_cols_to_drop, inplace=True)
+        print(f"[DB Architect] Purged {len(existing_cols_to_drop)} invalid columns: {existing_cols_to_drop}")
+    # =====================================================================
         
     print("[DB Architect] Committing core_market_table ledger...")
     df.to_sql('core_market_table', conn, if_exists='replace')

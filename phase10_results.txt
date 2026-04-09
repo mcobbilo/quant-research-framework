@@ -1,0 +1,11 @@
+
+[PHASE 10 ENGINE] INITIALIZING...
+Extracting top 60 DNA Features via L1 Regularization...
+
+[PHASE 10] EXECUTING DUAL-STAGE OOS BACKTEST...
+
+================================
+ PHASE 10 GROUND TRUTH RESULTS
+================================
+SPY BUY & HOLD: 1.31x (MDD: -12.36%)
+PHASE 10 ENGINE: 0.84x (MDD: -15.61%)

@@ -30,7 +30,7 @@ def generate_report():
     features = []
     for c in ml_df.columns:
         if c in excluded_cols: continue
-        if 'SPY_SMA' in c or 'TLT_SMA' in c or 'AD_LINE_SMA' in c: continue
+        if 'SPY_SMA' in c or 'VUSTX_SMA' in c or 'AD_LINE_SMA' in c: continue
         
         if 'Diff' in c and ('MonetaryBase' in c or 'TreasuryHoldings' in c or 'RecessionProbability' in c): continue
         if c in ['FederalReserveTreasuryHoldings_20dDiff', 'MonetaryBase_50dMA_20dDiff', 'MonetaryBase_50dMA_20dDiff_10dDiff', 'FederalReserveRecessionProbability_50dMA_5dDiff']: continue
@@ -52,7 +52,7 @@ def generate_report():
     
     xgb_params = {
         'n_estimators': 150,
-        'max_depth': 6,
+        'max_depth': 3,
         'learning_rate': 0.05,
         'subsample': 0.8,
         'colsample_bytree': 0.8,
@@ -80,7 +80,11 @@ def generate_report():
     
     # Demand >= 55% certainty before pushing array.
     results_df['Allocation'] = np.where(results_df['Predicted_Probability'] >= 0.55, 1.0, 0.0)
-    results_df['Strategy_Ret'] = results_df['SPY_Daily_Ret'] * results_df['Allocation']
+    
+    # Live Environment Simulation: 10 bps slippage per position entry/exit
+    slippage_cost = 0.001
+    results_df['Trade_Penalty'] = (results_df['Allocation'].diff().fillna(0).abs() * slippage_cost)
+    results_df['Strategy_Ret'] = (results_df['SPY_Daily_Ret'] * results_df['Allocation']) - results_df['Trade_Penalty']
     
     def calc_metrics(ret_series):
         cum = (1 + ret_series).cumprod()

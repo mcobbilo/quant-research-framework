@@ -1,0 +1,16 @@
+Degenerate Data Crash (AllNaN): Runtime Error:
+AttributeError: 'float' object has no attribute 'log'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/milocobb/Desktop/Recent Swarm Papers/quant_framework/temp_hypothesis.py", line 12, in <module>
+    df['LOG_RET'] = np.log(df['SPY_CLOSE'] / df['SPY_CLOSE'].shift(1))
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/milocobb/Desktop/Recent Swarm Papers/quant_framework/venv/lib/python3.12/site-packages/pandas/core/generic.py", line 2060, in __array_ufunc__
+    return arraylike.array_ufunc(self, ufunc, method, *inputs, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/milocobb/Desktop/Recent Swarm Papers/quant_framework/venv/lib/python3.12/site-packages/pandas/core/arraylike.py", line 402, in array_ufunc
+    result = getattr(ufunc, method)(*inputs, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: loop of ufunc does not support argument 0 of type float which has no callable log method

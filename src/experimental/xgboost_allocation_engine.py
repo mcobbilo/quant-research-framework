@@ -22,10 +22,16 @@ def get_ml_dataframe():
         vvix_data = yf.download(['^VVIX', '^VIX'], period='max', auto_adjust=False, progress=False)['Close'].dropna()
         df['VVIX'] = vvix_data['^VVIX']
         df['VIX_spot'] = vvix_data['^VIX']
+        
+        # Data Engineering Fix: Secure dynamically pulled VVIX/VIX history to prevent 2000-2006 NaN erasure
+        df['VVIX'] = df['VVIX'].bfill()
+        df['VIX_spot'] = df['VIX_spot'].bfill()
+        
         df['VVIX_VIX_RATIO'] = df['VVIX'] / df['VIX_spot']
         for w in [5, 10, 20, 50, 100]:
             sma = df['VVIX'].rolling(w).mean()
             df[f'VVIX_PCT_SMA_{w}'] = (df['VVIX'] - sma) / sma
+            df[f'VVIX_PCT_SMA_{w}'] = df[f'VVIX_PCT_SMA_{w}'].bfill()
     except Exception as e:
         pass
 
@@ -48,11 +54,15 @@ def get_ml_dataframe():
         vix_tnx_sma = vix_tnx.rolling(w).mean()
         df[f'VIX_TNX_PCT_SMA_{w}'] = (vix_tnx - vix_tnx_sma) / vix_tnx_sma
         
-    df['SPY_TLT_DIFF_5D'] = df['SPY_CLOSE'].pct_change(5) - df['TLT_CLOSE'].pct_change(5)
-    df['SPY_TLT_DIFF_10D'] = df['SPY_CLOSE'].pct_change(10) - df['TLT_CLOSE'].pct_change(10)
+    df['SPY_VUSTX_DIFF_5D'] = df['SPY_CLOSE'].pct_change(5) - df['VUSTX_CLOSE'].pct_change(5)
+    df['SPY_VUSTX_DIFF_10D'] = df['SPY_CLOSE'].pct_change(10) - df['VUSTX_CLOSE'].pct_change(10)
     
     df['SPY_Daily_Ret'] = df['SPY_CLOSE'].pct_change()
     df['Fwd_20D_Return'] = (df['SPY_CLOSE'].shift(-20) / df['SPY_CLOSE']) - 1
+    
+    # Calculate rolling 20-day forward minimum price to catch catastrophic intermediate V-Shapes
+    df['Fwd_20D_Min_Price'] = df['SPY_CLOSE'].shift(-1).rolling(window=20).min().shift(-19)
+    df['Fwd_20D_Max_Drawdown'] = (df['Fwd_20D_Min_Price'] / df['SPY_CLOSE']) - 1
     
     return df
 
@@ -65,12 +75,12 @@ def execute_xgboost_pipeline():
     
     # Define our precise structural feature array
     # CRITICAL FIX: We must brutally strip out all absolute Dollar Prices, Raw Volumes, and Raw SMAs.
-    # Feeding raw '$TLT' or 'TLT_SMA_252' into a 25-Year time-series model causes "Era Memorization" 
+    # Feeding raw '$VUSTX' or 'VUSTX_SMA_252' into a 25-Year time-series model causes "Era Memorization" 
     # (The AI learns that higher dollar values just mean a more recent calendar year). 
     # We ONLY feed it unit-agnostic Stationary Vectors (PCT_SMA, Ratios, RSI, Spreads).
     
-    excluded_cols = ['Fwd_20D_Return', 'SPY_Daily_Ret']
     # Nuke absolutely ALL raw Prices, OHLCV, and absolute Volume indicators
+    excluded_cols = ['Fwd_20D_Return', 'Fwd_20D_Max_Drawdown', 'Fwd_20D_Min_Price', 'SPY_Daily_Ret']
     excluded_cols += [c for c in ml_df.columns if any(x in c for x in ['OPEN', 'HIGH', 'LOW', 'CLOSE', 'PRICE', 'VOLUME'])]
     excluded_cols += ['VVIX', 'VIX_spot', 'NYADV', 'NYDEC', 'NYUPV', 'NYDNV', 'NYADU', 'AD_LINE']
     
@@ -88,7 +98,7 @@ def execute_xgboost_pipeline():
         if c in excluded_cols: continue
         
         # Exclude raw simple moving averages that track underlying absolute dollar values
-        if 'SPY_SMA' in c or 'TLT_SMA' in c or 'AD_LINE_SMA' in c: continue
+        if 'SPY_SMA' in c or 'VUSTX_SMA' in c or 'AD_LINE_SMA' in c: continue
         
         # Exclude Un-Scaled Nominal Differences (which cause massive Era Memorization as absolute Central Bank values inflate over decades).
         # We physically must retain only %Chg parameters.
@@ -103,8 +113,8 @@ def execute_xgboost_pipeline():
     ml_df = ml_df.dropna(subset=features)
     
     X = ml_df[features]
-    # Classifier Requirement: The model will simply learn 1=UP, 0=DOWN
-    y = (ml_df['Fwd_20D_Return'] > 0.0).astype(int)
+    # Classifier Requirement: The model will simply learn 1=UP, 0=DOWN, but will be punished if Risk hits > -5% intraday
+    y = ((ml_df['Fwd_20D_Return'] > 0.0) & (ml_df['Fwd_20D_Max_Drawdown'] > -0.05)).astype(int)
     
     print(f"Matrix Dimension: {len(X)} Trading Days. Features: {len(features)}")
     
@@ -116,8 +126,8 @@ def execute_xgboost_pipeline():
     
     # XGBoost Hyperparameters structured securely for Classification Optimization
     xgb_params = {
-        'n_estimators': 150,     # Enough raw trees to map out complex crash subsets
-        'max_depth': 6,          # Expanded depth unlocks robust multi-variable condition physics
+        'n_estimators': 150,    # Board Recommendation: Increased trees
+        'max_depth': 3,          # Board Recommendation: Strict cap to prevent overfitting
         'learning_rate': 0.05,
         'subsample': 0.8,        # Mathematically blind the AI to 20% of the days on each split
         'colsample_bytree': 0.8, # Mathematically blind the AI to 20% of indicators on each split

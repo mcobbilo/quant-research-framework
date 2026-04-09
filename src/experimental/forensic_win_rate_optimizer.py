@@ -42,7 +42,7 @@ def optimize_win_rate():
     drop_cols = ['SPY_CLOSE', 'SPY_OPEN', 'SPY_HIGH', 'SPY_LOW', 
                  'VIX_CLOSE', 'VIX_OPEN', 'VIX_HIGH', 'VIX_LOW',
                  'GC=F_CLOSE', 'GC=F_OPEN', 'GC=F_HIGH', 'GC=F_LOW',
-                 'TLT_CLOSE', 'TLT_OPEN', 'TLT_HIGH', 'TLT_LOW',
+                 'VUSTX_CLOSE', 'VUSTX_OPEN', 'VUSTX_HIGH', 'VUSTX_LOW',
                  'TNX_CLOSE', 'TNX_OPEN', 'TNX_HIGH', 'TNX_LOW',
                  'HG=F_CLOSE', 'HG=F_OPEN', 'HG=F_HIGH', 'HG=F_LOW']
                  

@@ -1,0 +1,73 @@
+INFO:root:[Backtest] Initiating Full-Timeline Walk-Forward Backtest on SPY (25y History, ~20y OOS)...
+INFO:root:[Backtest] Extracting SQLite Core Market Database...
+INFO:root:[Backtest] Target Matrix Size (After dropna alignment): 6183 Trading Days
+INFO:root:[Backtest] xLSTM configuration: 500 Windows over 10 horizon (Retraining every 10 days)
+Seed set to 42
+INFO:root:[Backtest] Commencing massive multi-epoch walk-forward permutations (Expect 1-2 hours)...
+/Users/milocobb/Desktop/Recent Swarm Papers/quant_framework/venv/lib/python3.12/site-packages/neuralforecast/common/_base_model.py:599: UserWarning: val_check_steps is greater than max_steps, setting val_check_steps to max_steps.
+  warnings.warn(
+GPU available: True (mps), used: True
+TPU available: False, using: 0 TPU cores
+💡 Tip: For seamless cloud logging and experiment tracking, try installing [litlogger](https://pypi.org/project/litlogger/) to enable LitLogger, which logs metrics and artifacts automatically to the Lightning Experiments platform.
+[2026-04-03 07:28:11.907000] [xLSTM] Commencing 500-window Cross Validation...
+┏━━━┳━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━┳━━━━━━━┓
+┃   ┃ Name                ┃ Type            ┃ Params ┃ Mode  ┃ FLOPs ┃
+┡━━━╇━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━╇━━━━━━━┩
+│ 0 │ loss                │ MQLoss          │      3 │ train │     0 │
+│ 1 │ padder_train        │ ConstantPad1d   │      0 │ train │     0 │
+│ 2 │ scaler              │ TemporalNorm    │      0 │ train │     0 │
+│ 3 │ feature_projection  │ Linear          │  1.9 K │ train │     0 │
+│ 4 │ hist_encoder        │ xLSTMBlockStack │  221 K │ train │     0 │
+│ 5 │ mlp_decoder         │ MLP             │ 16.9 K │ train │     0 │
+│ 6 │ temporal_projection │ Linear          │    310 │ train │     0 │
+└───┴─────────────────────┴─────────────────┴────────┴───────┴───────┘
+Trainable params: 240 K                                                                                                                                                                                                                                            
+Non-trainable params: 3                                                                                                                                                                                                                                            
+Total params: 240 K                                                                                                                                                                                                                                                
+Total estimated model params size (MB): 0                                                                                                                                                                                                                          
+Modules in train mode: 48                                                                                                                                                                                                                                          
+Modules in eval mode: 0                                                                                                                                                                                                                                            
+Total FLOPs: 0                                                                                                                                                                                                                                                     
+/Users/milocobb/Desktop/Recent Swarm Papers/quant_framework/venv/lib/python3.12/site-packages/pytorch_lightning/utilities/_pytree.py:21: `isinstance(treespec, LeafSpec)` is deprecated, use `isinstance(treespec, TreeSpec) and treespec.is_leaf()` instead.
+`Trainer.fit` stopped: `max_steps=50` reached.
+Epoch 49/-2 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1/1 0:00:00 • 0:00:00 0.00it/s v_num: 1115.000 train_loss_step: 1.005 train_loss_epoch: 1.005
+GPU available: True (mps), used: True
+TPU available: False, using: 0 TPU cores
+💡 Tip: For seamless cloud logging and experiment tracking, try installing [litlogger](https://pypi.org/project/litlogger/) to enable LitLogger, which logs metrics and artifacts automatically to the Lightning Experiments platform.
+/Users/milocobb/Desktop/Recent Swarm Papers/quant_framework/venv/lib/python3.12/site-packages/pytorch_lightning/utilities/_pytree.py:21: `isinstance(treespec, LeafSpec)` is deprecated, use `isinstance(treespec, TreeSpec) and treespec.is_leaf()` instead.
+Predicting ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1/1 0:00:00 • 0:00:00 0.00it/s  
+INFO:root:[Backtest] Backtest complete. OOS predictions written strictly to xLSTM_backtest_results.csv
+==================================================================
+ BACKTEST OOS SAMPLE (Out of Sample Ground Truth vs Quantile Map)
+==================================================================
+-> Walk-Forward OOS RMSE (Median): 11.33
+-> Total Asset Return (Continuous)    : 7.52x
+-> Total Strategy Return (LONG/SHORT) : 2.19x
+-> Asset Max Drawdown                 : -55.19%
+-> Strategy Max Drawdown              : -39.44%
+
+--- Year-by-Year Performance ---
+      Asset (%)  Model (%)
+year                      
+2006      13.83       9.06
+2007       5.15       8.49
+2008     -36.80     -14.08
+2009      26.35      44.20
+2010      15.06     -17.34
+2011       1.89       3.24
+2012      15.99      15.60
+2013      32.31     -11.58
+2014      13.46      14.39
+2015       1.23      13.30
+2016      12.00       1.38
+2017      21.71       1.10
+2018      -4.57       2.80
+2019      31.22       2.10
+2020      18.33      -0.07
+2021      28.73      10.72
+2022     -18.18     -17.00
+2023      26.18      -7.38
+2024      24.89      11.88
+2025      17.72      35.07
+2026      -3.56      -4.39
+==================================================================

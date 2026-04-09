@@ -59,6 +59,13 @@ def attach_features(df):
     df['VIX_BB_LOWER'] = df['VIX_SMA_20'] - (2 * df['VIX_STD_20'])
     df['VIX_BB_UPPER'] = df['VIX_SMA_20'] + (2 * df['VIX_STD_20'])
     
+    # Phase 24: Signal Lagging for Roan Combiner
+    df['SMA_200_prev'] = df['SMA_200'].shift(1)
+    df['SMA_20_prev'] = df['SMA_20'].shift(1)
+    df['GOLD_SMA_200'] = df['GOLD'].rolling(200).mean()
+    df['COPPER_SMA_200'] = df['COPPER'].rolling(200).mean()
+    df['DAILY_RET'] = df['SPY'].pct_change()
+    
     return df
 
 class StrategyD:

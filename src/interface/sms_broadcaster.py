@@ -33,30 +33,29 @@ def send_text_alert(target_allocation, spy_price, crash_prob, shap_drivers, phon
         
     print(f"[SMS Engine] Compiling AppleScript payload to target cell number {phone_number}...")
     
-    # Securely wrap text variables so bash/osascript string interpolation doesn't crash on emojis or quotes
-    safe_body = text_body.replace('"', '\\"')
-    
-    applescript = f'''
-    tell application "Messages"
-        try
-            set targetService to 1st service whose service type = iMessage
-            set targetBuddy to buddy "{phone_number}" of targetService
-            send "{safe_body}" to targetBuddy
-        on error
+    applescript = '''
+    on run {targetNumber, messagePayload}
+        tell application "Messages"
             try
-                set targetService to 1st service whose service type = SMS
-                set targetBuddy to buddy "{phone_number}" of targetService
-                send "{safe_body}" to targetBuddy
+                set targetService to 1st service whose service type = iMessage
+                set targetBuddy to buddy targetNumber of targetService
+                send messagePayload to targetBuddy
             on error
-                set targetBuddy to participant "{phone_number}" of account 1
-                send "{safe_body}" to targetBuddy
+                try
+                    set targetService to 1st service whose service type = SMS
+                    set targetBuddy to buddy targetNumber of targetService
+                    send messagePayload to targetBuddy
+                on error
+                    set targetBuddy to participant targetNumber of account 1
+                    send messagePayload to targetBuddy
+                end try
             end try
-        end try
-    end tell
+        end tell
+    end run
     '''
     
     try:
-        subprocess.run(['osascript', '-e', applescript], check=True, capture_output=True, text=True)
+        subprocess.run(['osascript', '-e', applescript, phone_number, text_body], check=True, capture_output=True, text=True)
         print(f"[SMS Engine] SUCCESS: Native macOS Text Alert safely dispatched payload to {phone_number}.")
     except subprocess.CalledProcessError as e:
         print(f"[SMS Engine] ERROR: Failed to hijack Messages Application: {e.stderr}")

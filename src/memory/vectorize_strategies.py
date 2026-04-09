@@ -10,8 +10,8 @@ from src.memory.local_persistence import LocalMemoryStore
 try:
     from sentence_transformers import SentenceTransformer
 except ImportError:
-    os.system("pip install sentence-transformers")
-    from sentence_transformers import SentenceTransformer
+    print("FATAL: 'sentence_transformers' is not installed. Ensure dependencies are satisfied.")
+    sys.exit(1)
 
 def vectorize():
     print("[RAG] Loading 384-D Semantic Vector Network (all-MiniLM-L6-v2)...")

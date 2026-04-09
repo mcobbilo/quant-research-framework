@@ -1,0 +1,99 @@
+================================
+ RED TEAM AUDIT INITIALIZED
+================================
+
+[SEED_0_PERTURBATION] INIT...
+[2026-04-03 10:29:48.558097] [xLSTM] Commencing 400-window Cross Validation...
+┏━━━┳━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━┳━━━━━━━┓
+┃   ┃ Name                ┃ Type             ┃ Params ┃ Mode  ┃ FLOPs ┃
+┡━━━╇━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━╇━━━━━━━┩
+│ 0 │ loss                │ DistributionLoss │      3 │ train │     0 │
+│ 1 │ padder_train        │ ConstantPad1d    │      0 │ train │     0 │
+│ 2 │ scaler              │ TemporalNorm     │      0 │ train │     0 │
+│ 3 │ feature_projection  │ Linear           │  3.5 K │ train │     0 │
+│ 4 │ hist_encoder        │ xLSTMBlockStack  │  221 K │ train │     0 │
+│ 5 │ mlp_decoder         │ MLP              │ 16.6 K │ train │     0 │
+│ 6 │ temporal_projection │ Linear           │    310 │ train │     0 │
+└───┴─────────────────────┴──────────────────┴────────┴───────┴───────┘
+Trainable params: 242 K                                                                                                                                                                                                                                            
+Non-trainable params: 3                                                                                                                                                                                                                                            
+Total params: 242 K                                                                                                                                                                                                                                                
+Total estimated model params size (MB): 0                                                                                                                                                                                                                          
+Modules in train mode: 48                                                                                                                                                                                                                                          
+Modules in eval mode: 0                                                                                                                                                                                                                                            
+Total FLOPs: 0                                                                                                                                                                                                                                                     
+Epoch 9/-2 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1/1 0:00:00 • 0:00:00 0.00it/s v_num: 1139.000 train_loss_step: 0.689 train_loss_epoch: 0.689
+Predicting ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1/1 0:00:00 • 0:00:00 0.00it/s  
+[SEED_0_PERTURBATION] COMPLETE | Asset Yield: 7.73x | Model Yield: 3.54x | Max DD: -41.55%
+
+[SEED_1337_PERTURBATION] INIT...
+[2026-04-03 10:29:50.785865] [xLSTM] Commencing 400-window Cross Validation...
+┏━━━┳━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━┳━━━━━━━┓
+┃   ┃ Name                ┃ Type             ┃ Params ┃ Mode  ┃ FLOPs ┃
+┡━━━╇━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━╇━━━━━━━┩
+│ 0 │ loss                │ DistributionLoss │      3 │ train │     0 │
+│ 1 │ padder_train        │ ConstantPad1d    │      0 │ train │     0 │
+│ 2 │ scaler              │ TemporalNorm     │      0 │ train │     0 │
+│ 3 │ feature_projection  │ Linear           │  3.5 K │ train │     0 │
+│ 4 │ hist_encoder        │ xLSTMBlockStack  │  221 K │ train │     0 │
+│ 5 │ mlp_decoder         │ MLP              │ 16.6 K │ train │     0 │
+│ 6 │ temporal_projection │ Linear           │    310 │ train │     0 │
+└───┴─────────────────────┴──────────────────┴────────┴───────┴───────┘
+Trainable params: 242 K                                                                                                                                                                                                                                            
+Non-trainable params: 3                                                                                                                                                                                                                                            
+Total params: 242 K                                                                                                                                                                                                                                                
+Total estimated model params size (MB): 0                                                                                                                                                                                                                          
+Modules in train mode: 48                                                                                                                                                                                                                                          
+Modules in eval mode: 0                                                                                                                                                                                                                                            
+Total FLOPs: 0                                                                                                                                                                                                                                                     
+Epoch 9/-2 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1/1 0:00:00 • 0:00:00 0.00it/s v_num: 1141.000 train_loss_step: 0.687 train_loss_epoch: 0.687
+Predicting ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1/1 0:00:00 • 0:00:00 0.00it/s  
+[SEED_1337_PERTURBATION] COMPLETE | Asset Yield: 7.73x | Model Yield: 4.08x | Max DD: -25.85%
+
+[5PCT_NOISE_INJECTION] INIT...
+[2026-04-03 10:29:52.112707] [xLSTM] Commencing 400-window Cross Validation...
+┏━━━┳━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━┳━━━━━━━┓
+┃   ┃ Name                ┃ Type             ┃ Params ┃ Mode  ┃ FLOPs ┃
+┡━━━╇━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━╇━━━━━━━┩
+│ 0 │ loss                │ DistributionLoss │      3 │ train │     0 │
+│ 1 │ padder_train        │ ConstantPad1d    │      0 │ train │     0 │
+│ 2 │ scaler              │ TemporalNorm     │      0 │ train │     0 │
+│ 3 │ feature_projection  │ Linear           │  3.5 K │ train │     0 │
+│ 4 │ hist_encoder        │ xLSTMBlockStack  │  221 K │ train │     0 │
+│ 5 │ mlp_decoder         │ MLP              │ 16.6 K │ train │     0 │
+│ 6 │ temporal_projection │ Linear           │    310 │ train │     0 │
+└───┴─────────────────────┴──────────────────┴────────┴───────┴───────┘
+Trainable params: 242 K                                                                                                                                                                                                                                            
+Non-trainable params: 3                                                                                                                                                                                                                                            
+Total params: 242 K                                                                                                                                                                                                                                                
+Total estimated model params size (MB): 0                                                                                                                                                                                                                          
+Modules in train mode: 48                                                                                                                                                                                                                                          
+Modules in eval mode: 0                                                                                                                                                                                                                                            
+Total FLOPs: 0                                                                                                                                                                                                                                                     
+Epoch 9/-2 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1/1 0:00:00 • 0:00:00 0.00it/s v_num: 1143.000 train_loss_step: 0.689 train_loss_epoch: 0.689
+Predicting ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1/1 0:00:00 • 0:00:00 0.00it/s  
+[5PCT_NOISE_INJECTION] COMPLETE | Asset Yield: 7.73x | Model Yield: 1.83x | Max DD: -33.69%
+
+[DATA_GUILLOTINE_TIMETRAVEL] INIT...
+[2026-04-03 10:29:53.485081] [xLSTM] Commencing 300-window Cross Validation...
+┏━━━┳━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━┳━━━━━━━┓
+┃   ┃ Name                ┃ Type             ┃ Params ┃ Mode  ┃ FLOPs ┃
+┡━━━╇━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━╇━━━━━━━┩
+│ 0 │ loss                │ DistributionLoss │      3 │ train │     0 │
+│ 1 │ padder_train        │ ConstantPad1d    │      0 │ train │     0 │
+│ 2 │ scaler              │ TemporalNorm     │      0 │ train │     0 │
+│ 3 │ feature_projection  │ Linear           │  3.5 K │ train │     0 │
+│ 4 │ hist_encoder        │ xLSTMBlockStack  │  221 K │ train │     0 │
+│ 5 │ mlp_decoder         │ MLP              │ 16.6 K │ train │     0 │
+│ 6 │ temporal_projection │ Linear           │    310 │ train │     0 │
+└───┴─────────────────────┴──────────────────┴────────┴───────┴───────┘
+Trainable params: 242 K                                                                                                                                                                                                                                            
+Non-trainable params: 3                                                                                                                                                                                                                                            
+Total params: 242 K                                                                                                                                                                                                                                                
+Total estimated model params size (MB): 0                                                                                                                                                                                                                          
+Modules in train mode: 48                                                                                                                                                                                                                                          
+Modules in eval mode: 0                                                                                                                                                                                                                                            
+Total FLOPs: 0                                                                                                                                                                                                                                                     
+Epoch 9/-2 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1/1 0:00:00 • 0:00:00 0.00it/s v_num: 1145.000 train_loss_step: 0.690 train_loss_epoch: 0.690
+Predicting ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1/1 0:00:00 • 0:00:00 0.00it/s  
+[DATA_GUILLOTINE_TIMETRAVEL] COMPLETE | Asset Yield: 4.28x | Model Yield: 1.67x | Max DD: -32.77%

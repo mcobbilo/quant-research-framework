@@ -3,9 +3,11 @@ import requests
 import json
 
 def test_alpaca_indexes():
-    API_KEY = "PKGJX75I5VY3H65G4SMDJ2MC3J"
-    SECRET_KEY = "EbVTKNcaH9gXMm76wJ9yGJc8mHe3cCi1HSqxgx6McFre"
-
+    API_KEY = os.environ.get("ALPACA_API_KEY", "")
+    SECRET_KEY = os.environ.get("ALPACA_SECRET_KEY", "")
+    
+    if not API_KEY or not SECRET_KEY:
+        print("⚠️ WARNING: ALPACA_API_KEY or ALPACA_SECRET_KEY not found in environment.")
     # Attempt to query common index tickers for Market Breadth
     symbols = ["ADVN", "ADD", "DECN", "NYAD", "UVOL", "DVOL"]
     

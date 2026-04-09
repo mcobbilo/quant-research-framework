@@ -1,0 +1,75 @@
+================================
+ PCA STRUCTURAL AUDIT
+================================
+
+[SEED 42 PCA INJECTION] INIT...
+[2026-04-03 11:44:47.280692] [xLSTM] Commencing 400-window Cross Validation...
+┏━━━┳━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━┳━━━━━━━┓
+┃   ┃ Name                ┃ Type             ┃ Params ┃ Mode  ┃ FLOPs ┃
+┡━━━╇━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━╇━━━━━━━┩
+│ 0 │ loss                │ DistributionLoss │      3 │ train │     0 │
+│ 1 │ padder_train        │ ConstantPad1d    │      0 │ train │     0 │
+│ 2 │ scaler              │ TemporalNorm     │      0 │ train │     0 │
+│ 3 │ feature_projection  │ Linear           │  2.2 K │ train │     0 │
+│ 4 │ hist_encoder        │ xLSTMBlockStack  │  221 K │ train │     0 │
+│ 5 │ mlp_decoder         │ MLP              │ 16.6 K │ train │     0 │
+│ 6 │ temporal_projection │ Linear           │    310 │ train │     0 │
+└───┴─────────────────────┴──────────────────┴────────┴───────┴───────┘
+Trainable params: 240 K                                                                                                                                                                                                                                            
+Non-trainable params: 3                                                                                                                                                                                                                                            
+Total params: 240 K                                                                                                                                                                                                                                                
+Total estimated model params size (MB): 0                                                                                                                                                                                                                          
+Modules in train mode: 48                                                                                                                                                                                                                                          
+Modules in eval mode: 0                                                                                                                                                                                                                                            
+Total FLOPs: 0                                                                                                                                                                                                                                                     
+Epoch 9/-2 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1/1 0:00:00 • 0:00:00 0.00it/s v_num: 1153.000 train_loss_step: 0.677 train_loss_epoch: 0.677
+Predicting ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1/1 0:00:00 • 0:00:00 0.00it/s  
+[PCA 42] COMPLETE | Asset Yield: 7.73x | Model Yield: 6.97x | Max DD: -32.69%
+
+[SEED 0 PCA INJECTION] INIT...
+[2026-04-03 11:44:49.650818] [xLSTM] Commencing 400-window Cross Validation...
+┏━━━┳━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━┳━━━━━━━┓
+┃   ┃ Name                ┃ Type             ┃ Params ┃ Mode  ┃ FLOPs ┃
+┡━━━╇━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━╇━━━━━━━┩
+│ 0 │ loss                │ DistributionLoss │      3 │ train │     0 │
+│ 1 │ padder_train        │ ConstantPad1d    │      0 │ train │     0 │
+│ 2 │ scaler              │ TemporalNorm     │      0 │ train │     0 │
+│ 3 │ feature_projection  │ Linear           │  2.2 K │ train │     0 │
+│ 4 │ hist_encoder        │ xLSTMBlockStack  │  221 K │ train │     0 │
+│ 5 │ mlp_decoder         │ MLP              │ 16.6 K │ train │     0 │
+│ 6 │ temporal_projection │ Linear           │    310 │ train │     0 │
+└───┴─────────────────────┴──────────────────┴────────┴───────┴───────┘
+Trainable params: 240 K                                                                                                                                                                                                                                            
+Non-trainable params: 3                                                                                                                                                                                                                                            
+Total params: 240 K                                                                                                                                                                                                                                                
+Total estimated model params size (MB): 0                                                                                                                                                                                                                          
+Modules in train mode: 48                                                                                                                                                                                                                                          
+Modules in eval mode: 0                                                                                                                                                                                                                                            
+Total FLOPs: 0                                                                                                                                                                                                                                                     
+Epoch 9/-2 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1/1 0:00:00 • 0:00:00 0.00it/s v_num: 1155.000 train_loss_step: 0.693 train_loss_epoch: 0.693
+Predicting ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1/1 0:00:00 • 0:00:00 0.00it/s  
+[PCA 0] COMPLETE | Asset Yield: 7.73x | Model Yield: 4.91x | Max DD: -26.67%
+
+[SEED 1337 PCA INJECTION] INIT...
+[2026-04-03 11:44:51.093275] [xLSTM] Commencing 400-window Cross Validation...
+┏━━━┳━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━┳━━━━━━━┓
+┃   ┃ Name                ┃ Type             ┃ Params ┃ Mode  ┃ FLOPs ┃
+┡━━━╇━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━╇━━━━━━━━╇━━━━━━━╇━━━━━━━┩
+│ 0 │ loss                │ DistributionLoss │      3 │ train │     0 │
+│ 1 │ padder_train        │ ConstantPad1d    │      0 │ train │     0 │
+│ 2 │ scaler              │ TemporalNorm     │      0 │ train │     0 │
+│ 3 │ feature_projection  │ Linear           │  2.2 K │ train │     0 │
+│ 4 │ hist_encoder        │ xLSTMBlockStack  │  221 K │ train │     0 │
+│ 5 │ mlp_decoder         │ MLP              │ 16.6 K │ train │     0 │
+│ 6 │ temporal_projection │ Linear           │    310 │ train │     0 │
+└───┴─────────────────────┴──────────────────┴────────┴───────┴───────┘
+Trainable params: 240 K                                                                                                                                                                                                                                            
+Non-trainable params: 3                                                                                                                                                                                                                                            
+Total params: 240 K                                                                                                                                                                                                                                                
+Total estimated model params size (MB): 0                                                                                                                                                                                                                          
+Modules in train mode: 48                                                                                                                                                                                                                                          
+Modules in eval mode: 0                                                                                                                                                                                                                                            
+Total FLOPs: 0                                                                                                                                                                                                                                                     
+Epoch 9/-2 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1/1 0:00:00 • 0:00:00 0.00it/s v_num: 1157.000 train_loss_step: 0.682 train_loss_epoch: 0.682
+Predicting ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1/1 0:00:00 • 0:00:00 0.00it/s  
+[PCA 1337] COMPLETE | Asset Yield: 7.73x | Model Yield: 1.96x | Max DD: -38.85%

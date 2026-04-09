@@ -20,7 +20,7 @@ def read_shap():
     features = []
     for c in ml_df.columns:
         if c in excluded_cols: continue
-        if 'SPY_SMA' in c or 'TLT_SMA' in c or 'AD_LINE_SMA' in c: continue
+        if 'SPY_SMA' in c or 'VUSTX_SMA' in c or 'AD_LINE_SMA' in c: continue
         features.append(c)
 
     ml_df = ml_df.dropna(subset=features)
