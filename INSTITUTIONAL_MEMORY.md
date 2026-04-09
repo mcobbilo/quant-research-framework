@@ -5,6 +5,12 @@ This document serves as the central Nervous System for the quant framework. It c
 
 ---
 
+## 🛑 Immutable System Directives
+
+- **ABSOLUTE VETO ON LEVERAGE:** The system and user will **never** use leverage. Do not ever propose Kelly-multiplier leverage (e.g., 1.5x, 2.0x Kelly sizing), margined allocation ratios, or any strategy mechanics that exceed 100% of nominal capital exposure (`MAX_EXPOSURE = 1.0`). If a fractional or alignment system scores maximum conviction, capital allocation must hard-cap precisely at `TARGET_VOL` weight without multiplier augmentation. Do not suggest or architect leverage under any circumstance.
+
+---
+
 ## 🏆 The "Council of Winners" (Top Validated Baselines)
 
 These are the peak algorithmic structures that have survived rigorous Walk-Forward and Out-Of-Sample (OOS) testing.
@@ -14,6 +20,7 @@ These are the peak algorithmic structures that have survived rigorous Walk-Forwa
 | **`3f0968d2`** | **The SOTA Trifecta Ensemble** *(TFT 55% / LGBM 30% / XGB 15%)* | 4-Asset (SPY, TLT, GLD, BTC) Vol-Target 12% + Top 150 SHAP | 2020 - 2026 | **-8.88%** | **32.68%** | **2.03** |
 | **`2684655d`** | **Global XGBoost Allocator** *(Phase 126 Master)* | VIX > 20 Panic Buy Override + "Doctor Copper" < 1.04x Defensive Block | 10-Year | -17.6% | 164.6% Total | **1.15** |
 | **`679fc793`** | **v4.1 Dual-Pocket** *(XGBoost)* | SPY/GLD & TLT/GLD (13% Vol Target + T-Bills) | 2006 - 2026 | -22.87% | 10.62% | **0.90** |
+| **`4b7ec9fe`** | **v5.2 Senate "Micro-Fractal"** *(150x LGBM)* | `1d, 2d, 3d, 5d, 10d, 21d` High-Res Horizons + Hit-Rate Quarantine Veto | 2016 - 2026 | **-16.76%** | **10.84%** | **0.87** |
 
 ---
 
@@ -27,6 +34,7 @@ Do **NOT** attempt to re-explore these hypotheses. They have been empirically pr
 | `2684655d` | **Yield Curve Un-Inversion Override** (10Y-3M > 0) | Using this as a 100% Cash Kill-Switch destroyed baseline performance (Total Returns plunged from 166% to 57%). | **REJECTED**: Abandoned curve logic for local triggers. |
 | `2684655d` | **The Falling Knife Cascade** (Bonds beat Stocks > 9%) | Prevented the architecture from buying during massive V-shaped recoveries on Days 6 & 7 post-crash. | **REJECTED**: Doctor Copper override was vastly superior. |
 | `fb78672e` | **Pure Python Monolithic Swarm Execution** | Caused astronomical LLM logic hallucinations, "spinning circle" infinite loops, and forward data leakage. | **REJECTED**: Transitioned to Git Patch Dry-Runs. |
+| `4b7ec9fe` | **Thematic Feature Clustering** (Senate isolation) | Over-specializing weak-learners via strict feature pools caused synergistic decay and systemic data starvation. | **REJECTED**: Fracturing targets with randomized features is superior. |
 
 ---
 

@@ -1,0 +1,24 @@
+====================================
+ SOTA TRIFECTA RED TEAM AUDIT 
+====================================
+
+[SEED_0_PERTURBATION] INIT...
+Training Trifecta Expanding Window...
+
+[SEED_0_PERTURBATION] TRIFECTA COMPLETE | Asset Yield: 1.71x | Model Yield: 1.06x | Max DD: -27.06%
+====================================
+ SOTA TRIFECTA RED TEAM AUDIT 
+====================================
+
+[5PCT_NOISE_INJECTION] INIT...
+Training Trifecta Expanding Window...
+
+[5PCT_NOISE_INJECTION] TRIFECTA COMPLETE | Asset Yield: 1.71x | Model Yield: 0.61x | Max DD: -51.61%
+====================================
+ SOTA TRIFECTA RED TEAM AUDIT 
+====================================
+
+[DATA_GUILLOTINE_TIMETRAVEL] INIT...
+Training Trifecta Expanding Window...
+
+[DATA_GUILLOTINE_TIMETRAVEL] TRIFECTA COMPLETE | Asset Yield: 1.51x | Model Yield: 0.87x | Max DD: -33.74%
