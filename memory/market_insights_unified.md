@@ -32,3 +32,12 @@ This index consolidates manual research and 'Phase 20' audit findings to ensure 
 
 - **Bond Contagion (MOVE > 130)**: Acts as a structural headwind for SPY (Win rate drops to 71.3%). Use as a primary de-risking trigger regardless of VIX levels.
 - **Flight-to-Quality**: While VUSTX has a 95.2% win rate during VIX > 40, SPY's absolute return is >5x higher. **Prioritize Panic Harvesting in SPY.**
+
+## 5. Stealth QE & Central Bank Fluid Dynamics
+
+> *Source: Institutional Liquidity Tracking / Federal Reserve 'Shell Games'*
+
+- **The Treasury's Stealth QE**: The US Treasury can act as a shadow central bank by dynamically shifting its debt issuance duration. By issuing a massive overflow of short-term T-bills (often heavily exceeding the TBAC guidance limit of 20%) instead of long-term bonds, the Treasury effectively drains the Federal Reserve’s Reverse Repo (RRP) Facility.
+- **RRP Drain Mechanics**: Money Market Funds treat short-term T-bills and the RRP practically identically as risk-free yield. When the Treasury issues an ocean of new T-bills, these funds withdraw their dormant cash from the RRP to purchase the bills, flushing trillions of formerly trapped capital directly into the active financial system.
+- **The Liquidity Illusion (2023-2024)**: Despite the Federal Reserve publicly posturing a strictly "hawkish" stance through rate hikes and Quantitative Tightening (QT), the US Treasury injected roughly **$2.2 Trillion** in synthetic liquidity by depleting the RRP. This shadow operation mechanically countered the Fed's tightening cycle and provided the structural buoyancy that kept risk assets scaling to all-time highs.
+- **True North Tracking (Net Dollar Liquidity)**: General market participants often wrongly attribute these financial conditions to political administrations or explicitly to Fed announcements. To immunize models against this noise, the quantitative array natively tracks the exact mathematical float: `Net Liquidity = Total Assets (WALCL) - TGA (WTREGEN) - RRP (RRPONTSYD)`. Taking the 65-day momentum (second derivative) of this float allows the system to systematically anticipate macro turning points 3-to-5 weeks before they register in legacy price oscillators.

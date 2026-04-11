@@ -38,8 +38,8 @@ def run_tft_backtest():
         add_relative_time_idx=True,
     )
 
-    print("Loading internal weights from Epoch 13...")
-    ckpt_path = "/Users/milocobb/Desktop/Recent Swarm Papers/lightning_logs/version_6/checkpoints/epoch=13-step=3290.ckpt"
+    print("Loading internal weights from Epoch 12...")
+    ckpt_path = "/Users/milocobb/Desktop/Recent Swarm Papers/quant_framework/lightning_logs/version_1162/checkpoints/epoch=12-step=3055.ckpt"
     model = TemporalFusionTransformer.load_from_checkpoint(ckpt_path, map_location="cpu", weights_only=False)
 
     # Evaluate the final 3 years (out-of-sample stress test) to avoid multi-hour iterator stalls
@@ -170,6 +170,23 @@ def run_tft_backtest():
         print("\nCONCLUSION: Strategy demonstrates dominant structural Alpha generation post-latency-shielding.")
     else:
         print("\nCONCLUSION: Strategy failed to outperform Baseline Buy/Hold across 3-year OOS dataset.")
+        
+    print("\n--- Holding Sequence Transitions ---")
+    eval_df['Prev_Position'] = eval_df['Position'].shift(1)
+    changes = eval_df[eval_df['Position'] != eval_df['Prev_Position']].dropna(subset=['Prev_Position'])
+    
+    pos_map = {1.0: "LONG SPY", -1.0: "SHORT SPY", 0.0: "CASH"}
+    
+    # Print the initial position
+    initial_date = eval_df.index[0].strftime('%Y-%m-%d') if hasattr(eval_df.index[0], 'strftime') else eval_df.index[0]
+    initial_pos = pos_map.get(eval_df['Position'].iloc[0], "UNKNOWN")
+    print(f"{initial_date}: Initial Allocation -> {initial_pos}")
+    
+    for idx, row in changes.iterrows():
+        date_str = idx.strftime('%Y-%m-%d') if hasattr(idx, 'strftime') else idx
+        prev = pos_map.get(row['Prev_Position'], "UNKNOWN")
+        curr = pos_map.get(row['Position'], "UNKNOWN")
+        print(f"{date_str}: Switched from {prev} to {curr}")
 
 if __name__ == '__main__':
     run_tft_backtest()

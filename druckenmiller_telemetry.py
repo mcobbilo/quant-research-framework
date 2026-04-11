@@ -48,7 +48,9 @@ def main():
         'WTREGEN': 'TGA',
         'RRPONTSYD': 'RRP',
         'CPILFENS': 'Core_CPI_NSA',
-        'UNRATENSA': 'Unemployment_NSA'
+        'UNRATENSA': 'Unemployment_NSA',
+        'BAMLH0A1HYBB': 'BB_Spread',
+        'BAMLH0A3HYC': 'CCC_Spread'
     }
     
     df_fred = web.DataReader(list(fred_series.keys()), 'fred', start_date, end_date)
@@ -71,12 +73,27 @@ def main():
     # 2. Smart Money Shadow
     df_fred['us2y_ffr_divergence'] = df_fred['US2Y'] - df_fred['Fed_Funds']
     
-    # 3. Global Net Liquidity Velocity
+    # 3. Global Net Liquidity Velocity (Standard 1-to-1)
     df_fred['Net_Liquidity'] = df_fred['Total_Assets'] - df_fred['TGA'] - df_fred['RRP']
     df_fred['net_liquidity_momentum'] = df_fred['Net_Liquidity'].pct_change(65) # 13 weeks * 5 days = 65 trading days
     
+    # 3b. Shadow Liquidity Oscillator (Accounting for ~8.5x T-bill rehypothecation velocity)
+    # Using diff() normalized by Total Assets avoids mathematically breaking pct_change() when values cross zero.
+    T_BILL_MULTIPLIER = 8.5
+    df_fred['shadow_liquidity_momentum'] = (
+        df_fred['Total_Assets'].diff(65) - 
+        df_fred['TGA'].diff(65) - 
+        (df_fred['RRP'].diff(65) * T_BILL_MULTIPLIER)
+    ) / df_fred['Total_Assets'].shift(65)
+    
     # 4. Credit Cycle Peak / Malinvestment
     df_fred['hy_spread_velocity'] = df_fred['HY_Spread'].pct_change(21) # 1 month velocity
+    
+    # 4b. Sub-Prime Credit Risk Dispersion (CCC vs BB)
+    # Filling NaN if early history is missing, although data goes back to 1999
+    df_fred['CCC_Spread'] = df_fred['CCC_Spread'].fillna(method='bfill')
+    df_fred['BB_Spread'] = df_fred['BB_Spread'].fillna(method='bfill')
+    df_fred['ccc_bb_spread_dispersion'] = df_fred['CCC_Spread'] - df_fred['BB_Spread']
     
     df_fred = df_fred.reset_index()
     if 'DATE' in df_fred.columns: df_fred.rename(columns={'DATE': 'Date'}, inplace=True)
@@ -97,17 +114,17 @@ def main():
     # usually drop 3-4 weeks after the month closes.
     # We enforce a strict 21-trading-day shift to eliminate lookahead bias.
     # ---------------------------------------------------------
-    shift_cols = ['taylor_policy_spread', 'us2y_ffr_divergence', 'net_liquidity_momentum', 'hy_spread_velocity', 't_bill_drain_ratio']
+    shift_cols = ['taylor_policy_spread', 'us2y_ffr_divergence', 'net_liquidity_momentum', 'shadow_liquidity_momentum', 'hy_spread_velocity', 'ccc_bb_spread_dispersion', 't_bill_drain_ratio']
     df_final[shift_cols] = df_final[shift_cols].shift(21)
 
     # Drop rows that don't have enough history to calc YoY arrays (first year)
-    df_final = df_final.dropna(subset=['taylor_policy_spread', 'net_liquidity_momentum'])
+    df_final = df_final.dropna(subset=['taylor_policy_spread', 'shadow_liquidity_momentum'])
     
     print("Variables Encoded:")
-    print(df_final[['Date', 'taylor_policy_spread', 'us2y_ffr_divergence', 'net_liquidity_momentum', 'hy_spread_velocity', 't_bill_drain_ratio']].tail())
+    print(df_final[['Date', 'net_liquidity_momentum', 'shadow_liquidity_momentum', 'ccc_bb_spread_dispersion', 't_bill_drain_ratio']].tail())
     
     # Output
-    out_cols = ['Date', 'taylor_policy_spread', 'us2y_ffr_divergence', 'net_liquidity_momentum', 'hy_spread_velocity', 't_bill_drain_ratio']
+    out_cols = ['Date', 'taylor_policy_spread', 'us2y_ffr_divergence', 'net_liquidity_momentum', 'shadow_liquidity_momentum', 'hy_spread_velocity', 'ccc_bb_spread_dispersion', 't_bill_drain_ratio']
     df_final[out_cols].to_csv("druckenmiller_features.csv", index=False)
     print(f"\nPipeline Complete. Saved to druckenmiller_features.csv ({len(df_final)} rows)")
 
