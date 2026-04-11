@@ -2,9 +2,12 @@ import yfinance as yf
 import pandas as pd
 import numpy as np
 
+
 def calculate_vix_tranche_returns():
     print("[Research] Downloading 25 years of SPY and VIX data...")
-    spy_data = yf.download("SPY", start="2000-01-01", end="2025-01-01", progress=False, auto_adjust=True)
+    spy_data = yf.download(
+        "SPY", start="2000-01-01", end="2025-01-01", progress=False, auto_adjust=True
+    )
     vix_data = yf.download("^VIX", start="2000-01-01", end="2025-01-01", progress=False)
 
     df = pd.DataFrame(index=spy_data.index)
@@ -35,24 +38,31 @@ def calculate_vix_tranche_returns():
     df["Tranche"] = df["VIX"].apply(get_tranche)
 
     # Statistics Synthesis
-    summary = df.groupby("Tranche")["Forward_12M_Return"].agg([
-        ("Count", "count"),
-        ("Mean Return (%)", lambda x: np.mean(x) * 100),
-        ("Median Return (%)", lambda x: np.median(x) * 100),
-        ("Win Rate (%)", lambda x: (x > 0).mean() * 100),
-        ("Std Dev (%)", lambda x: np.std(x) * 100)
-    ]).sort_index()
+    summary = (
+        df.groupby("Tranche")["Forward_12M_Return"]
+        .agg(
+            [
+                ("Count", "count"),
+                ("Mean Return (%)", lambda x: np.mean(x) * 100),
+                ("Median Return (%)", lambda x: np.median(x) * 100),
+                ("Win Rate (%)", lambda x: (x > 0).mean() * 100),
+                ("Std Dev (%)", lambda x: np.std(x) * 100),
+            ]
+        )
+        .sort_index()
+    )
 
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("VIX TRANCHE ANALYSIS: 12-MONTH FORWARD SPY RETURNS (2000-2024)")
-    print("="*80)
+    print("=" * 80)
     print(summary.to_string())
-    print("="*80)
+    print("=" * 80)
 
     # Recommendation
     top_tranche = summary["Mean Return (%)"].idxmax()
     print(f"\n[RESEARCH FINDING] The highest average return comes from: {top_tranche}")
     print(f"Mean: {summary.loc[top_tranche, 'Mean Return (%)']:.2f}%")
+
 
 if __name__ == "__main__":
     calculate_vix_tranche_returns()

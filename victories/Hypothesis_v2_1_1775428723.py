@@ -2,18 +2,26 @@ import sqlite3
 import pandas as pd
 import numpy as np
 
-conn = sqlite3.connect('src/data/market_data.db')
+conn = sqlite3.connect("src/data/market_data.db")
 df = pd.read_sql_query("SELECT * FROM core_market_table", conn)
 conn.close()
 df.columns = [c.upper() for c in df.columns]
-df['DATE'] = pd.to_datetime(df['DATE'])
-df = df.sort_values('DATE').set_index('DATE')
+df["DATE"] = pd.to_datetime(df["DATE"])
+df = df.sort_values("DATE").set_index("DATE")
 
 for col in df.columns:
-    df[col] = pd.to_numeric(df[col], errors='coerce')
+    df[col] = pd.to_numeric(df[col], errors="coerce")
 df = df.ffill().bfill()
 
-univ_cols = ['SPY_CLOSE', 'IWM_CLOSE', 'GLD_CLOSE', 'RSP_CLOSE', 'VUSTX_CLOSE', 'CL_CLOSE', 'HG_CLOSE']
+univ_cols = [
+    "SPY_CLOSE",
+    "IWM_CLOSE",
+    "GLD_CLOSE",
+    "RSP_CLOSE",
+    "VUSTX_CLOSE",
+    "CL_CLOSE",
+    "HG_CLOSE",
+]
 univ = [c for c in univ_cols if c in df.columns]
 prices = df[univ].copy()
 
@@ -35,16 +43,20 @@ else:
     lambda1_series = pd.Series(np.nan, index=dates, dtype=float)
 
     for i in range(W, n):
-        window_ret = returns.iloc[i-W:i].copy()
+        window_ret = returns.iloc[i - W : i].copy()
         if window_ret.shape[1] < 3 or window_ret.shape[0] < W:
             continue
-        R = window_ret.apply(lambda x: (x - x.mean()) / x.std(ddof=0), axis=0).fillna(0).copy()
+        R = (
+            window_ret.apply(lambda x: (x - x.mean()) / x.std(ddof=0), axis=0)
+            .fillna(0)
+            .copy()
+        )
         corr_mat = R.corr().values.copy()
         eigvals = np.sort(np.linalg.eigvalsh(corr_mat))[::-1]
         eigvals = np.maximum(eigvals, 1e-8)
         lambda1_series.iloc[i] = eigvals[0]
         ks = np.arange(1, min(K, len(eigvals)) + 1)
-        log_lam = np.log(eigvals[:len(ks)])
+        log_lam = np.log(eigvals[: len(ks)])
         if len(ks) >= 2:
             slope, _ = np.polyfit(ks, log_lam, 1)
             beta_series.iloc[i] = -slope
@@ -56,7 +68,7 @@ else:
     delta_beta = ewma_fast - ewma_slow
     Z = (delta_beta - delta_beta.rolling(L).mean()) / delta_beta.rolling(L).std()
 
-    spy_close = df['SPY_CLOSE'].copy()
+    spy_close = df["SPY_CLOSE"].copy()
     spy_ret = spy_close.pct_change()
     spy_vol = spy_ret.rolling(21).std()
 
@@ -65,7 +77,9 @@ else:
     w = (pos * vol_scale).fillna(0)
 
     beta_10 = beta.rolling(252).quantile(0.1)
-    filt = ((lambda1_series > 1.8) & (lambda1_series < 5.5) & (beta > beta_10)).astype(float)
+    filt = ((lambda1_series > 1.8) & (lambda1_series < 5.5) & (beta > beta_10)).astype(
+        float
+    )
     filt = filt.ffill().fillna(0)
     w = w * filt
 

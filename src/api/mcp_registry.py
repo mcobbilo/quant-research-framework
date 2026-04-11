@@ -7,10 +7,8 @@ CURIOSITY_PATH = os.path.join(BASE_DIR, "memory", "fractal", "CURIOSITY.md")
 MEMORY_PATH = os.path.join(BASE_DIR, "memory", "fractal", "MEMORY.md")
 
 # Create the MCP Server
-mcp = FastMCP(
-    "AutonomousCuriosityEngine",
-    dependencies=["fastmcp", "pydantic"]
-)
+mcp = FastMCP("AutonomousCuriosityEngine", dependencies=["fastmcp", "pydantic"])
+
 
 @mcp.resource("memory://curiosity_matrix")
 def get_curiosity_matrix() -> str:
@@ -19,6 +17,7 @@ def get_curiosity_matrix() -> str:
         return "CURIOSITY.md not found."
     with open(CURIOSITY_PATH, "r") as f:
         return f.read()
+
 
 @mcp.resource("memory://engine_logs")
 def get_engine_logs() -> str:
@@ -29,6 +28,7 @@ def get_engine_logs() -> str:
         lines = f.readlines()
         return "".join(lines[-500:])
 
+
 @mcp.tool()
 def get_hypothesis_status(hypothesis_name: str) -> str:
     """
@@ -38,7 +38,7 @@ def get_hypothesis_status(hypothesis_name: str) -> str:
         return "Error: Matrix not found."
     with open(CURIOSITY_PATH, "r") as f:
         lines = f.readlines()
-        
+
     for line in lines:
         if hypothesis_name.lower() in line.lower():
             if "[S]" in line:

@@ -9,6 +9,7 @@ PROJECT_ROOT = os.path.dirname(os.path.dirname(BASE_DIR))
 # Initialize the Sandbox Gateway MCP Server
 mcp = FastMCP("Docker Sandbox MCP Gateway")
 
+
 @mcp.tool()
 def sandboxed_terminal_exec(command: str) -> str:
     """
@@ -21,41 +22,45 @@ def sandboxed_terminal_exec(command: str) -> str:
     # --rm: Destroy container after execution
     # -v: Mount the project root to /workspace as read-only (ro)
     docker_cmd = [
-        "docker", "run", "--rm",
-        "-v", f"{PROJECT_ROOT}:/workspace:ro",
-        "-w", "/workspace",
+        "docker",
+        "run",
+        "--rm",
+        "-v",
+        f"{PROJECT_ROOT}:/workspace:ro",
+        "-w",
+        "/workspace",
         "quant-agent-sandbox:latest",
-        "sh", "-c", command
+        "sh",
+        "-c",
+        command,
     ]
 
     try:
         # 2. Run the ephemeral container with an isolated timeout
         # Using a restricted timeout context prevents hanging the main orchestration layer.
-        result = subprocess.run(
-            docker_cmd,
-            capture_output=True,
-            text=True,
-            timeout=120  
-        )
-        
+        result = subprocess.run(docker_cmd, capture_output=True, text=True, timeout=120)
+
         stdout = result.stdout.strip()
         stderr = result.stderr.strip()
-        
+
         output = []
         if stdout:
             output.append(f"STDOUT:\n{stdout}")
         if stderr:
             output.append(f"STDERR:\n{stderr}")
-            
+
         if not output:
-             output.append(f"Command exited with return code {result.returncode} (No Output).")
-             
+            output.append(
+                f"Command exited with return code {result.returncode} (No Output)."
+            )
+
         return "\n\n".join(output)
-        
+
     except subprocess.TimeoutExpired as e:
         return f"Sandbox execution timed out after 120s. STDOUT:\n{e.stdout}"
     except Exception as e:
         return f"Sandbox architecture failure: {str(e)}"
+
 
 if __name__ == "__main__":
     # Start the FastMCP gateway on stdio

@@ -5,12 +5,12 @@ import numpy as np
 # =============================================================================
 # Load and prepare data
 # =============================================================================
-conn = sqlite3.connect('src/data/market_data.db')
+conn = sqlite3.connect("src/data/market_data.db")
 df = pd.read_sql_query("SELECT * FROM core_market_table", conn)
 conn.close()
 
 df.columns = [c.upper() for c in df.columns]
-df = df.ffill().sort_values('DATE').reset_index(drop=True)
+df = df.ffill().sort_values("DATE").reset_index(drop=True)
 
 if len(df) <= 100:
     print("RESULT_YIELD: 0.0")
@@ -21,13 +21,13 @@ else:
     # ---------------------------------------------------------------------
     # Target selection (SPY_CLOSE preferred)
     # ---------------------------------------------------------------------
-    if 'SPY_CLOSE' in df.columns:
-        target = 'SPY_CLOSE'
+    if "SPY_CLOSE" in df.columns:
+        target = "SPY_CLOSE"
     else:
         target = df.columns[1]  # fallback
 
-    df['RETURN'] = df[target].pct_change().fillna(0.0)
-    r = df['RETURN'].values
+    df["RETURN"] = df[target].pct_change().fillna(0.0)
+    r = df["RETURN"].values
     n = len(r)
 
     # ---------------------------------------------------------------------
@@ -81,7 +81,7 @@ else:
             current_dd = max(0.0, 1.0 - equity_curve[t] / peak)
             tau = min(1.0, drawdown_control / current_dd) if current_dd > 0 else 1.0
 
-            sigma2 = r[t]**2 + 1e-8
+            sigma2 = r[t] ** 2 + 1e-8
             w = (alpha / sigma2) * tau
             w = np.clip(w, -1.0, 1.0)
             position_ts[t] = w

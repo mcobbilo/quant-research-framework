@@ -1,6 +1,7 @@
 import subprocess
 import json
 
+
 def extract_fomc_transcripts(url: str) -> str:
     """
     Executes `yt-dlp` to intercept live video streams and download the JSON metadata/subtitles.
@@ -9,7 +10,9 @@ def extract_fomc_transcripts(url: str) -> str:
     try:
         result = subprocess.run(
             ["yt-dlp", "--skip-download", "--dump-json", url],
-            capture_output=True, text=True, timeout=15
+            capture_output=True,
+            text=True,
+            timeout=15,
         )
         if result.returncode == 0 and result.stdout.strip():
             # yt-dlp returns line-delimited JSON
@@ -27,12 +30,14 @@ def extract_fomc_transcripts(url: str) -> str:
     except Exception as e:
         return f"[YouTube Exception]: {e}"
 
+
 def breaking_news_search(query: str) -> str:
     """
     Synthesizes the Exa Semantic Search MCP functionality to pull breaking macro news.
     """
     # In a full implementation, this uses `mcporter call 'exa.search()'`
     return f"[Exa MCP Bridge]: Semantic sweep completed for '{query}'. Context: Markets expect massive volatility compression today based on overnight swap flows."
+
 
 if __name__ == "__main__":
     # Test suite

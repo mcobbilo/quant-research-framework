@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 import torch
-import numpy as np
+
 
 class JepaSkill(ABC):
     """
@@ -8,22 +8,25 @@ class JepaSkill(ABC):
     Skills are modular mathematical operations ('Indicators', 'Regimes', 'Risk')
     that can be invoked by the Autonomous Curiosity Engine.
     """
+
     @abstractmethod
     def execute(self, inputs: torch.Tensor) -> torch.Tensor:
-        """ Primary execution logic for the skill. """
+        """Primary execution logic for the skill."""
         pass
 
     @property
     @abstractmethod
     def domain(self) -> str:
-        """ The J-EPA Attention Domain this skill contributes to. """
+        """The J-EPA Attention Domain this skill contributes to."""
         pass
+
 
 class VolTargetingSkill(JepaSkill):
     """
     Skill: Dynamic Volatility Targeting.
     Scales exposure based on rolling ATR and VIX regimes.
     """
+
     def __init__(self, target_vol: float = 0.10):
         self.target_vol = target_vol
 
@@ -38,11 +41,13 @@ class VolTargetingSkill(JepaSkill):
     def domain(self) -> str:
         return "VOLATILITY"
 
+
 class GMMRegimeSkill(JepaSkill):
     """
     Skill: Gaussian Mixture Regime Classifier.
     Assigns soft-likelihoods for 5 distinct market regimes.
     """
+
     def execute(self, inputs: torch.Tensor) -> torch.Tensor:
         # J-EPA attention-biased regime clustering
         # (Batch, 16) -> (Batch, 5)

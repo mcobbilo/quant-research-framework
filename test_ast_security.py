@@ -15,7 +15,7 @@ exec('print("Hacked")')
 
 safe_code = """
 import pandas as pd
-""" # Wait, my security blocks ALL imports. Is this safe? Yes, it will be blocked.
+"""  # Wait, my security blocks ALL imports. Is this safe? Yes, it will be blocked.
 
 print("Test 1 (import):", check_code_safety(malicious_code_1))
 print("Test 2 (dunder):", check_code_safety(malicious_code_2))

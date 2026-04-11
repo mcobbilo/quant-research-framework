@@ -4,13 +4,13 @@ from sklearn.mixture import GaussianMixture
 import sqlite3
 
 # ====================== DATA LOADING ======================
-conn = sqlite3.connect('src/data/market_data.db')
+conn = sqlite3.connect("src/data/market_data.db")
 df = pd.read_sql_query("SELECT * FROM core_market_table", conn)
 conn.close()
 
 df.columns = [c.upper() for c in df.columns]
 
-required_cols = ['DATE', 'SPY_CLOSE']
+required_cols = ["DATE", "SPY_CLOSE"]
 for c in required_cols:
     if c not in df.columns:
         raise ValueError(f"Missing required column: {c}")
@@ -20,33 +20,33 @@ if len(df) <= burnin:
     print("RESULT_YIELD: 0.0000")
     print("RESULT_SHARPE: 0.0000")
     # Satisfy framework that expects WEALTH column
-    df['WEALTH'] = 1.0
-    df['STRATEGY_RET'] = 0.0
+    df["WEALTH"] = 1.0
+    df["STRATEGY_RET"] = 0.0
     exit(0)
 
-df = df.sort_values('DATE').reset_index(drop=True)
+df = df.sort_values("DATE").reset_index(drop=True)
 
 # Convert all columns except DATE to numeric
 for col in df.columns:
-    if col != 'DATE':
-        df[col] = pd.to_numeric(df[col], errors='coerce')
+    if col != "DATE":
+        df[col] = pd.to_numeric(df[col], errors="coerce")
 
 df = df.ffill().bfill()
 
 # ====================== FEATURE ENGINEERING ======================
-df['RET'] = df['SPY_CLOSE'].pct_change().fillna(0.0)
-ret_arr = df['RET'].values.copy()
-sq_ret = ret_arr ** 2
+df["RET"] = df["SPY_CLOSE"].pct_change().fillna(0.0)
+ret_arr = df["RET"].values.copy()
+sq_ret = ret_arr**2
 
-df['RV1'] = pd.Series(sq_ret).rolling(1, min_periods=1).sum()
-df['RV5'] = pd.Series(sq_ret).rolling(5, min_periods=1).sum()
-df['RV22'] = pd.Series(sq_ret).rolling(22, min_periods=1).sum()
-df['RV_RATIO'] = df['RV5'] / (df['RV22'] + 1e-8)
-df['DELTA_RV5'] = df['RV5'].diff().fillna(0.0)
-df['RV_OF_RV'] = df['RV5'].rolling(22, min_periods=1).std().fillna(0.0)
+df["RV1"] = pd.Series(sq_ret).rolling(1, min_periods=1).sum()
+df["RV5"] = pd.Series(sq_ret).rolling(5, min_periods=1).sum()
+df["RV22"] = pd.Series(sq_ret).rolling(22, min_periods=1).sum()
+df["RV_RATIO"] = df["RV5"] / (df["RV22"] + 1e-8)
+df["DELTA_RV5"] = df["RV5"].diff().fillna(0.0)
+df["RV_OF_RV"] = df["RV5"].rolling(22, min_periods=1).std().fillna(0.0)
 
-features = ['RV1', 'RV5', 'RV22', 'RV_RATIO', 'DELTA_RV5', 'RV_OF_RV']
-df[features] = df[features].apply(pd.to_numeric, errors='coerce').fillna(0.0)
+features = ["RV1", "RV5", "RV22", "RV_RATIO", "DELTA_RV5", "RV_OF_RV"]
+df[features] = df[features].apply(pd.to_numeric, errors="coerce").fillna(0.0)
 
 # ====================== MODEL PARAMETERS ======================
 n = len(df)
@@ -65,21 +65,17 @@ strategy_returns = np.zeros(n)
 for t in range(burnin, n - 1):
     start = max(t - gmm_window, 0)
     X = df.iloc[start:t][features].values.copy()
-    
+
     if len(X) < 100:
         strategy_returns[t] = 0.0
         continue
 
     gmm = GaussianMixture(
-        n_components=K,
-        random_state=42,
-        covariance_type='full',
-        max_iter=100,
-        n_init=1
+        n_components=K, random_state=42, covariance_type="full", max_iter=100, n_init=1
     )
     gmm.fit(X)
 
-    v_t = df.iloc[t:t+1][features].values.copy()
+    v_t = df.iloc[t : t + 1][features].values.copy()
     gamma = gmm.predict_proba(v_t)[0]
 
     w = 0.0
@@ -89,7 +85,7 @@ for t in range(burnin, n - 1):
         alloc = mu_k / (lamb * sig2_k)
         w += gamma[k] * max(alloc, 0.0)
 
-    ret_next = df['RET'].iloc[t + 1]
+    ret_next = df["RET"].iloc[t + 1]
     strategy_returns[t] = w * ret_next
 
     # ====================== ONLINE UPDATE (Fixed) ======================
@@ -98,21 +94,25 @@ for t in range(burnin, n - 1):
         if gk > 1e-8:
             old_mu = current_mu[k]
             # Update mean
-            current_mu[k] = (current_mu[k] * regime_count[k] + gk * ret_next) / (regime_count[k] + gk)
+            current_mu[k] = (current_mu[k] * regime_count[k] + gk * ret_next) / (
+                regime_count[k] + gk
+            )
             # Use old mean for error (correct statistical update)
             err = ret_next - old_mu
             # Update variance
-            current_var[k] = (current_var[k] * regime_count[k] + gk * err**2) / (regime_count[k] + gk)
+            current_var[k] = (current_var[k] * regime_count[k] + gk * err**2) / (
+                regime_count[k] + gk
+            )
             regime_count[k] += gk
 
 # ====================== PERFORMANCE ======================
-df['STRATEGY_RET'] = strategy_returns
+df["STRATEGY_RET"] = strategy_returns
 wealth = np.cumprod(1.0 + strategy_returns)
 wealth = np.maximum(wealth, 0.0)
-df['WEALTH'] = wealth
+df["WEALTH"] = wealth
 
 # Use only post-burnin returns (excluding final zero if present)
-valid_rets = strategy_returns[burnin:n-1]
+valid_rets = strategy_returns[burnin : n - 1]
 
 if len(valid_rets) > 20:
     ann_ret = np.mean(valid_rets) * 252

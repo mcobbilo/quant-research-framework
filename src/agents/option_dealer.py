@@ -10,7 +10,9 @@ load_dotenv()
 
 class OptionDealerAnalysis(BaseModel):
     direction: str = Field(description="Directional leaning: LONG, SHORT, or NEUTRAL")
-    rationale: str = Field(description="Detailed rationale for the directional leaning based on options flow and heavy-tail risk")
+    rationale: str = Field(
+        description="Detailed rationale for the directional leaning based on options flow and heavy-tail risk"
+    )
 
 
 def get_option_dealer_llm():
@@ -21,15 +23,15 @@ def get_option_dealer_llm():
     """
     raw_key = os.environ.get("XAI_API_KEY", "")
     clean_key = raw_key.strip('"').strip("'")
-    
+
     model_name = os.environ.get("OPTION_DEALER_MODEL", "grok-4.2")
-    
+
     return ChatOpenAI(
         model=model_name,
         base_url="https://api.x.ai/v1",
         api_key=clean_key,
         temperature=0.2,
-        max_tokens=1024
+        max_tokens=1024,
     )
 
 
@@ -37,6 +39,7 @@ from src.models.jamba_bridge import JambaBridge
 
 # Global JambaBridge instance to avoid repeated GPU weight loading (MPS)
 _jamba_bridge = None
+
 
 def get_jamba_signal():
     global _jamba_bridge
@@ -64,13 +67,15 @@ def option_dealer_node(state: dict) -> dict:
         jamba_context = "No Jamba alpha signal available."
         if jamba_signal:
             jamba_context = f"""
-            Regime Prediction: {jamba_signal['ensemble_prediction']}
-            Confidence: {jamba_signal['confidence']:.2%}
-            Class Probabilities: {jamba_signal['distribution']}
+            Regime Prediction: {jamba_signal["ensemble_prediction"]}
+            Confidence: {jamba_signal["confidence"]:.2%}
+            Class Probabilities: {jamba_signal["distribution"]}
             """
 
         # Phase 19: Structural Memory Injection (Structural Awareness)
-        memory_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "MEMORY_MAP.md")
+        memory_path = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "MEMORY_MAP.md"
+        )
         structural_context = "No structural memory mapping found."
         if os.path.exists(memory_path):
             with open(memory_path, "r") as f:
@@ -94,18 +99,20 @@ def option_dealer_node(state: dict) -> dict:
         """
 
         messages = [
-            SystemMessage(content="You are the Option Dealer for the autonomous quantitative trading desk. Output structured JSON."),
-            HumanMessage(content=prompt)
+            SystemMessage(
+                content="You are the Option Dealer for the autonomous quantitative trading desk. Output structured JSON."
+            ),
+            HumanMessage(content=prompt),
         ]
 
         response = llm.invoke(messages)
         return {
             "option_dealer_direction": response.direction,
-            "option_dealer_rationale": response.rationale
+            "option_dealer_rationale": response.rationale,
         }
     except Exception as e:
         print(f"[Option Dealer Node] Error executing Nemotron inferrence: {e}")
         return {
             "option_dealer_direction": "NEUTRAL",
-            "option_dealer_rationale": f"Inference failed with exception: {e}"
+            "option_dealer_rationale": f"Inference failed with exception: {e}",
         }

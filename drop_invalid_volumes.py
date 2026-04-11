@@ -6,14 +6,14 @@ conn = sqlite3.connect(db_path)
 cursor = conn.cursor()
 
 columns_to_drop = [
-    'VIX_VOLUME',
-    'VIX3M_VOLUME',
-    'VIX6M_VOLUME',
-    'GC_VOLUME',
-    'HG_VOLUME',
-    'VUSTX_VOLUME',
-    'TNX_VOLUME',
-    'MOVE_VOLUME'
+    "VIX_VOLUME",
+    "VIX3M_VOLUME",
+    "VIX6M_VOLUME",
+    "GC_VOLUME",
+    "HG_VOLUME",
+    "VUSTX_VOLUME",
+    "TNX_VOLUME",
+    "MOVE_VOLUME",
 ]
 
 for col in columns_to_drop:

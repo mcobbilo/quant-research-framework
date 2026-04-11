@@ -15,22 +15,26 @@ if os.path.exists(env_path):
                 env_vars[key] = val.strip('"').strip("'")
 
 API_URL = os.environ.get("LLM_API_URL", "https://api.x.ai/v1/chat/completions")
-API_KEY = os.environ.get("XAI_API_KEY", env_vars.get("XAI_API_KEY", "your_xai_api_key_here"))
+API_KEY = os.environ.get(
+    "XAI_API_KEY", env_vars.get("XAI_API_KEY", "your_xai_api_key_here")
+)
 MODEL = os.environ.get("LLM_MODEL", "grok-4.20-reasoning")
 
-def call_llm(messages, temperature=0.1): # Low temperature for analytical JSON output
+
+def call_llm(messages, temperature=0.1):  # Low temperature for analytical JSON output
     headers = {"Content-Type": "application/json", "Authorization": f"Bearer {API_KEY}"}
     payload = {"model": MODEL, "messages": messages, "temperature": temperature}
     try:
         response = requests.post(API_URL, headers=headers, json=payload, timeout=60)
         if response.status_code == 200:
-            return response.json()['choices'][0]['message']['content']
+            return response.json()["choices"][0]["message"]["content"]
         else:
             print(f"Error: {response.status_code} {response.text}")
             return None
     except Exception as e:
         print(f"Request Error: {e}")
         return None
+
 
 def extract_fomc_signal(text: str):
     """
@@ -53,14 +57,17 @@ def extract_fomc_signal(text: str):
       "surprise_factor": float      # Range 0.0 (expected) to 1.0 (shock/emergency/dissent)
     }
     """
-    
+
     messages = [
         {"role": "system", "content": sys_prompt},
-        {"role": "user", "content": f"Analyze this FOMC release:\n\n{text[:4000]}"} # Truncate to fit context if needed
+        {
+            "role": "user",
+            "content": f"Analyze this FOMC release:\n\n{text[:4000]}",
+        },  # Truncate to fit context if needed
     ]
-    
+
     response = call_llm(messages)
-    
+
     if response:
         try:
             # Strip markdown formatting just in case
@@ -69,47 +76,50 @@ def extract_fomc_signal(text: str):
         except Exception as e:
             print(f"Failed to parse JSON: {e}")
             return {"directional_impact": 0.0, "surprise_factor": 0.0}
-    
+
     return {"directional_impact": 0.0, "surprise_factor": 0.0}
 
 
 def main():
     print("Loading HuggingFace FOMC historical data...")
     df = pd.read_csv("fomc_communications_historical.csv")
-    
+
     # Sort chronologically by date
-    df['Date'] = pd.to_datetime(df['Date'])
-    df = df.sort_values(by='Date')
-    
-    print(f"Dataset contains {len(df)} records. Processing ALL records against the XAI LLM API.")
-    
+    df["Date"] = pd.to_datetime(df["Date"])
+    df = df.sort_values(by="Date")
+
+    print(
+        f"Dataset contains {len(df)} records. Processing ALL records against the XAI LLM API."
+    )
+
     # Evaluating the entire historic log
     df_sample = df.copy()
-    
+
     directional_impacts = []
     surprise_factors = []
-    
+
     for idx, row in df_sample.iterrows():
         print(f"Processing Event: {row['Date'].strftime('%Y-%m-%d')} - {row['Type']}")
-        
+
         # Simple screening rule - avoid processing non-substantive text
-        if pd.isna(row['Text']) or len(str(row['Text'])) < 100:
+        if pd.isna(row["Text"]) or len(str(row["Text"])) < 100:
             directional_impacts.append(0.0)
             surprise_factors.append(0.0)
             continue
-            
-        result = extract_fomc_signal(str(row['Text']))
-        directional_impacts.append(result.get('directional_impact', 0.0))
-        surprise_factors.append(result.get('surprise_factor', 0.0))
-        
-        time.sleep(1) # Prevent rate limits
-        
-    df_sample['directional_impact'] = directional_impacts
-    df_sample['surprise_factor'] = surprise_factors
-    
+
+        result = extract_fomc_signal(str(row["Text"]))
+        directional_impacts.append(result.get("directional_impact", 0.0))
+        surprise_factors.append(result.get("surprise_factor", 0.0))
+
+        time.sleep(1)  # Prevent rate limits
+
+    df_sample["directional_impact"] = directional_impacts
+    df_sample["surprise_factor"] = surprise_factors
+
     output_filename = "fomc_signals.csv"
     df_sample.to_csv(output_filename, index=False)
     print(f"\nProcessing complete! Signals successfully saved to {output_filename}")
+
 
 if __name__ == "__main__":
     main()

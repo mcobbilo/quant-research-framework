@@ -1,9 +1,10 @@
 import os
-import re
 
-file_path = os.path.join(os.path.dirname(__file__), 'src', 'data', 'database_builder.py')
+file_path = os.path.join(
+    os.path.dirname(__file__), "src", "data", "database_builder.py"
+)
 
-with open(file_path, 'r') as file:
+with open(file_path, "r") as file:
     content = file.read()
 
 # Replace the ticker string
@@ -25,7 +26,7 @@ content = content.replace("'GC'", "'GLD'")
 content = content.replace("'GLD_VOLUME', ", "")
 content = content.replace("'GLD_CMF'", "")
 
-with open(file_path, 'w') as file:
+with open(file_path, "w") as file:
     file.write(content)
 
 print("Successfully transformed GC to GLD in database logic!")

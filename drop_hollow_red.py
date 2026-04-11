@@ -14,6 +14,6 @@ except Exception as e:
 
 conn.commit()
 df = pd.read_sql_query("SELECT * FROM core_market_table ORDER BY Date ASC", conn)
-df.to_csv('market_data_inspection.csv', index=False)
+df.to_csv("market_data_inspection.csv", index=False)
 print(f"Data re-exported: {len(df.columns)} columns remaining.")
 conn.close()

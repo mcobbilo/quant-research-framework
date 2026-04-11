@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+
 class RMSNorm(nn.Module):
     def __init__(self, dim, eps=1e-6):
         super().__init__()
@@ -13,10 +14,12 @@ class RMSNorm(nn.Module):
         x_normed = x * torch.rsqrt(norm_x + self.eps)
         return x_normed * self.weight
 
+
 class AELayer(nn.Module):
     """
     Residual MLP Layer inspired by CALM architecture.
     """
+
     def __init__(self, dim, hidden_dim):
         super().__init__()
         self.norm = RMSNorm(dim)
@@ -30,16 +33,18 @@ class AELayer(nn.Module):
         x = self.norm(x)
         return residual + self.down_proj(self.act(self.gate_proj(x)) * self.up_proj(x))
 
+
 class MarketAutoEncoder(nn.Module):
     """
     Continuous AutoEncoder for high-bandwidth market state representation.
     Compresses high-dimensional technical and OSINT features into a latent vector.
     """
+
     def __init__(self, input_dim: int, latent_dim: int = 128, n_layers: int = 3):
         super().__init__()
         self.input_dim = input_dim
         self.latent_dim = latent_dim
-        
+
         # Encoder
         encoder_layers = []
         curr_dim = input_dim
@@ -47,7 +52,7 @@ class MarketAutoEncoder(nn.Module):
             encoder_layers.append(AELayer(curr_dim, curr_dim * 2))
         self.encoder_backbone = nn.Sequential(*encoder_layers)
         self.latent_proj = nn.Linear(input_dim, latent_dim)
-        
+
         # Decoder
         self.latent_expand = nn.Linear(latent_dim, input_dim)
         decoder_layers = []
@@ -70,11 +75,13 @@ class MarketAutoEncoder(nn.Module):
         x_recon = self.decode(z)
         return x_recon, z
 
+
 class ActionDecoder(nn.Module):
     """
     Decodes high-bandwidth latent thought vectors into discrete trading actions.
     Maps 128D -> 3-way distribution (Long, Neutral, Short/Hedge).
     """
+
     def __init__(self, latent_dim: int = 128):
         super().__init__()
         self.decoder = nn.Sequential(
@@ -82,24 +89,26 @@ class ActionDecoder(nn.Module):
             nn.ReLU(),
             nn.Linear(64, 32),
             nn.ReLU(),
-            nn.Linear(32, 3) # 0: Neutral, 1: Long, 2: Short/Hedge
+            nn.Linear(32, 3),  # 0: Neutral, 1: Long, 2: Short/Hedge
         )
 
     def forward(self, z: torch.Tensor) -> torch.Tensor:
         return self.decoder(z)
+
 
 class BrierLoss(nn.Module):
     """
     Likelihood-free loss for continuous latent vectors.
     Based on the paper's collision probability concept.
     """
+
     def __init__(self):
         super().__init__()
 
     def forward(self, z_pred, z_target):
-        # In a regression context, Brier is often equivalent to MSE 
+        # In a regression context, Brier is often equivalent to MSE
         # but the CALM paper uses it as a collision probability check.
-        # For this version, we will implement the MSE as a primary metric 
+        # For this version, we will implement the MSE as a primary metric
         # and include a collision check as a secondary term.
         mse_loss = F.mse_loss(z_pred, z_target)
         # Collision term: how similar are they in cosine space?

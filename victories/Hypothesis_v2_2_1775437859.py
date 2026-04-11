@@ -2,7 +2,6 @@ import pandas as pd
 import numpy as np
 import sqlite3
 import statsmodels.api as sm
-from typing import Tuple
 
 # =============================================================================
 # Configuration
@@ -21,19 +20,20 @@ PRIOR_SIGMA = 0.015
 
 def main() -> None:
     # Load data
-    conn = sqlite3.connect('src/data/market_data.db')
+    conn = sqlite3.connect("src/data/market_data.db")
     try:
         df = pd.read_sql_query("SELECT * FROM core_market_table", conn)
     finally:
         conn.close()
 
     df.columns = [c.upper() for c in df.columns]
-    df = df.sort_values('DATE').reset_index(drop=True)
+    df = df.sort_values("DATE").reset_index(drop=True)
 
     # Identify target column
-    close_cols = [col for col in df.columns 
-                  if col.startswith('SPY') and col.endswith('CLOSE')]
-    asset = close_cols[0] if close_cols else 'SPY_CLOSE'
+    close_cols = [
+        col for col in df.columns if col.startswith("SPY") and col.endswith("CLOSE")
+    ]
+    asset = close_cols[0] if close_cols else "SPY_CLOSE"
 
     if asset not in df.columns:
         print("RESULT_YIELD: 0.0000")
@@ -41,7 +41,7 @@ def main() -> None:
         return
 
     # Prepare price series (only forward-fill the price column)
-    df[asset] = pd.to_numeric(df[asset], errors='coerce')
+    df[asset] = pd.to_numeric(df[asset], errors="coerce")
     df[asset] = df[asset].ffill()
 
     prices = df[asset].values
@@ -51,13 +51,10 @@ def main() -> None:
         return
 
     log_prices = np.log(prices)
-    
+
     # Trend filter - causal (adjust=False + ewm is recursive)
-    f_t = (pd.Series(log_prices)
-           .ewm(span=SPAN, adjust=False)
-           .mean()
-           .values)
-    
+    f_t = pd.Series(log_prices).ewm(span=SPAN, adjust=False).mean().values
+
     X = log_prices - f_t
 
     n = len(df)
@@ -67,14 +64,14 @@ def main() -> None:
 
     for t in range(BURNIN, n):
         start = max(t - WINDOW, 0)
-        x_win = X[start:t + 1]
-        
+        x_win = X[start : t + 1]
+
         if len(x_win) < MIN_WINDOW_FOR_FIT:
             continue
 
         y = x_win[1:]
         x_lag = x_win[:-1]
-        X_mat = sm.add_constant(x_lag, has_constant='add')
+        X_mat = sm.add_constant(x_lag, has_constant="add")
 
         try:
             model = sm.OLS(y, X_mat).fit(disp=0)
@@ -114,14 +111,14 @@ def main() -> None:
     alpha = alpha * credibility
 
     # Position sizing
-    v_t = (sigma_s ** 2) * DT
+    v_t = (sigma_s**2) * DT
     w_t = np.zeros(n)
     w_t[BURNIN:] = alpha[BURNIN:] / (LAMBDA_RISK * np.maximum(v_t[BURNIN:], 1e-8))
     w_t = np.clip(w_t, -1.5, 1.5)
 
     # Strategy returns - position at t is known at t, applied to next return
     rets = np.diff(log_prices)
-    pos = w_t[:len(rets)]                    # w_t[t] → return from t to t+1
+    pos = w_t[: len(rets)]  # w_t[t] → return from t to t+1
     strat_rets = pos * rets
 
     # Performance from burn-in period
