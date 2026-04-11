@@ -215,9 +215,9 @@ KeyError: 'SPY_CLOSE'
 The above exception was the direct cause of the following exception:
 
 Traceback (most recent call last):
-  File "/Users/milocobb/Desktop/Recent Swarm Papers/quant_framework/temp_hypothesis.py", line 16, in <module>
+  File "/Users/milocobb/Desktop/Recent Swarm Papers/quant_framework/temp_hypothesis.py", line 16, in `module`
     price = df['SPY_CLOSE'].astype(float)
-  File "/Users/milocobb/Library/Python/3.9/lib/python/site-packages/pandas/core/frame.py", line 4113, in __getitem__
+  File "/Users/milocobb/Library/Python/3.9/lib/python/site-packages/pandas/core/frame.py", line 4113, in **getitem**
     indexer = self.columns.get_loc(key)
   File "/Users/milocobb/Library/Python/3.9/lib/python/site-packages/pandas/core/indexes/base.py", line 3819, in get_loc
     raise KeyError(key) from err
@@ -228,16 +228,16 @@ KeyError: 'SPY_CLOSE'
 [F] Hypothesis_003_1775423008: Underperformed benchmarks. Yield: 0.0012, Sharpe: 0.0103
 [F] Hypothesis_004_1775423093: Sanity Check Failed (Degenerate Data Crash (Empty): Runtime Error:
 Traceback (most recent call last):
-  File "/Users/milocobb/Desktop/Recent Swarm Papers/quant_framework/temp_hypothesis.py", line 10, in <module>
+  File "/Users/milocobb/Desktop/Recent Swarm Papers/quant_framework/temp_hypothesis.py", line 10, in `module`
     df = df.dropna(subset=['SPY_CLOSE'])
   File "/Users/milocobb/Library/Python/3.9/lib/python/site-packages/pandas/core/frame.py", line 6692, in dropna
-    raise KeyError(np.array(subset)[check].tolist())
+    raise KeyError[np.array(subset](check).tolist())
 KeyError: ['SPY_CLOSE']
 )
 [F] Hypothesis_004_1775423186: Underperformed benchmarks. Yield: 0.2736, Sharpe: 0.1808
 [F] Hypothesis_005_1775423603: Sanity Check Failed (Degenerate Data Crash (Empty): Runtime Error:
 Traceback (most recent call last):
-  File "/Users/milocobb/Desktop/Recent Swarm Papers/quant_framework/temp_hypothesis.py", line 4, in <module>
+  File "/Users/milocobb/Desktop/Recent Swarm Papers/quant_framework/temp_hypothesis.py", line 4, in `module`
     from statsmodels.tsa.stattools import adfuller, acf
 ModuleNotFoundError: No module named 'statsmodels'
 )
@@ -245,7 +245,7 @@ ModuleNotFoundError: No module named 'statsmodels'
 [F] Hypothesis_006_1775424052: Underperformed benchmarks. Yield: -0.1573, Sharpe: 0.019
 [F] Hypothesis_007_1775424153: Sanity Check Failed (Degenerate Data Crash (Empty): Runtime Error:
 Traceback (most recent call last):
-  File "/Users/milocobb/Desktop/Recent Swarm Papers/quant_framework/temp_hypothesis.py", line 4, in <module>
+  File "/Users/milocobb/Desktop/Recent Swarm Papers/quant_framework/temp_hypothesis.py", line 4, in `module`
     from statsmodels.tsa.stattools import adfuller
 ModuleNotFoundError: No module named 'statsmodels'
 )
@@ -253,7 +253,7 @@ ModuleNotFoundError: No module named 'statsmodels'
 [F] Hypothesis_008_1775424337: No valid RESULT metrics printed to stdout.
 [F] Hypothesis_009_1775424427: Sanity Check Failed (Degenerate Data Crash (Empty): Runtime Error:
 Traceback (most recent call last):
-  File "/Users/milocobb/Desktop/Recent Swarm Papers/quant_framework/temp_hypothesis.py", line 4, in <module>
+  File "/Users/milocobb/Desktop/Recent Swarm Papers/quant_framework/temp_hypothesis.py", line 4, in `module`
     from statsmodels.tsa.stattools import adfuller
 ModuleNotFoundError: No module named 'statsmodels'
 )
@@ -273,10 +273,10 @@ KeyError: 'SPY_CLOSE'
 The above exception was the direct cause of the following exception:
 
 Traceback (most recent call last):
-  File "/Users/milocobb/Desktop/Recent Swarm Papers/quant_framework/temp_hypothesis.py", line 20, in <module>
+  File "/Users/milocobb/Desktop/Recent Swarm Papers/quant_framework/temp_hypothesis.py", line 20, in `module`
     prices = df['SPY_CLOSE'].values
              ~~^^^^^^^^^^^^^
-  File "/Users/milocobb/Desktop/Recent Swarm Papers/quant_framework/venv/lib/python3.12/site-packages/pandas/core/frame.py", line 4378, in __getitem__
+  File "/Users/milocobb/Desktop/Recent Swarm Papers/quant_framework/venv/lib/python3.12/site-packages/pandas/core/frame.py", line 4378, in **getitem**
     indexer = self.columns.get_loc(key)
               ^^^^^^^^^^^^^^^^^^^^^^^^^
   File "/Users/milocobb/Desktop/Recent Swarm Papers/quant_framework/venv/lib/python3.12/site-packages/pandas/core/indexes/base.py", line 3648, in get_loc
@@ -289,28 +289,28 @@ AttributeError: 'float' object has no attribute 'log'
 The above exception was the direct cause of the following exception:
 
 Traceback (most recent call last):
-  File "/Users/milocobb/Desktop/Recent Swarm Papers/quant_framework/temp_hypothesis.py", line 31, in <module>
+  File "/Users/milocobb/Desktop/Recent Swarm Papers/quant_framework/temp_hypothesis.py", line 31, in `module`
     df['R'] = np.log(df[price_col] / df[price_col].shift(1))
               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/milocobb/Desktop/Recent Swarm Papers/quant_framework/venv/lib/python3.12/site-packages/pandas/core/generic.py", line 2060, in __array_ufunc__
+  File "/Users/milocobb/Desktop/Recent Swarm Papers/quant_framework/venv/lib/python3.12/site-packages/pandas/core/generic.py", line 2060, in \_\_array\_ufunc\_\_
     return arraylike.array_ufunc(self, ufunc, method, *inputs, **kwargs)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   File "/Users/milocobb/Desktop/Recent Swarm Papers/quant_framework/venv/lib/python3.12/site-packages/pandas/core/arraylike.py", line 402, in array_ufunc
-    result = getattr(ufunc, method)(*inputs, **kwargs)
+    result = getattr(ufunc, method)(\*inputs, \*\*kwargs)
              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 TypeError: loop of ufunc does not support argument 0 of type float which has no callable log method
 )
 [F] Hypothesis_003_1775425290: Sanity Check Failed (Degenerate Data Crash (Empty): Runtime Error:
 Traceback (most recent call last):
-  File "/Users/milocobb/Desktop/Recent Swarm Papers/quant_framework/temp_hypothesis.py", line 16, in <module>
+  File "/Users/milocobb/Desktop/Recent Swarm Papers/quant_framework/temp_hypothesis.py", line 16, in `module`
     prices = df[price_cols].apply(pd.to_numeric, errors='coerce')
              ~~^^^^^^^^^^^^
-  File "/Users/milocobb/Desktop/Recent Swarm Papers/quant_framework/venv/lib/python3.12/site-packages/pandas/core/frame.py", line 4384, in __getitem__
-    indexer = self.columns._get_indexer_strict(key, "columns")[1]
+  File "/Users/milocobb/Desktop/Recent Swarm Papers/quant_framework/venv/lib/python3.12/site-packages/pandas/core/frame.py", line 4384, in **getitem**
+    indexer = self.columns.\_get\_indexer\_strict[key, "columns"](1)
               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/milocobb/Desktop/Recent Swarm Papers/quant_framework/venv/lib/python3.12/site-packages/pandas/core/indexes/base.py", line 6302, in _get_indexer_strict
-    self._raise_if_missing(keyarr, indexer, axis_name)
-  File "/Users/milocobb/Desktop/Recent Swarm Papers/quant_framework/venv/lib/python3.12/site-packages/pandas/core/indexes/base.py", line 6352, in _raise_if_missing
+  File "/Users/milocobb/Desktop/Recent Swarm Papers/quant_framework/venv/lib/python3.12/site-packages/pandas/core/indexes/base.py", line 6302, in \_get\_indexer\_strict
+    self.\_raise\_if\_missing(keyarr, indexer, axis_name)
+  File "/Users/milocobb/Desktop/Recent Swarm Papers/quant_framework/venv/lib/python3.12/site-packages/pandas/core/indexes/base.py", line 6352, in \_raise\_if\_missing
     raise KeyError(f"None of [{key}] are in the [{axis_name}]")
 KeyError: "None of [Index(['SPY_CLOSE', 'IWM_CLOSE', 'RSP_CLOSE', 'GLD_CLOSE', 'CL_CLOSE',\n       'HG_CLOSE', 'VUSTX_CLOSE'],\n      dtype='str')] are in the [columns]"
 )
@@ -331,10 +331,10 @@ KeyError: 'SPY_CLOSE'
 The above exception was the direct cause of the following exception:
 
 Traceback (most recent call last):
-  File "/Users/milocobb/Desktop/Recent Swarm Papers/quant_framework/temp_hypothesis.py", line 17, in <module>
+  File "/Users/milocobb/Desktop/Recent Swarm Papers/quant_framework/temp_hypothesis.py", line 17, in `module`
     df[asset + '_RET'] = np.log(df[col] / df[col].shift(1))
                                 ~~^^^^^
-  File "/Users/milocobb/Desktop/Recent Swarm Papers/quant_framework/venv/lib/python3.12/site-packages/pandas/core/frame.py", line 4378, in __getitem__
+  File "/Users/milocobb/Desktop/Recent Swarm Papers/quant_framework/venv/lib/python3.12/site-packages/pandas/core/frame.py", line 4378, in **getitem**
     indexer = self.columns.get_loc(key)
               ^^^^^^^^^^^^^^^^^^^^^^^^^
   File "/Users/milocobb/Desktop/Recent Swarm Papers/quant_framework/venv/lib/python3.12/site-packages/pandas/core/indexes/base.py", line 3648, in get_loc
@@ -351,14 +351,14 @@ AttributeError: 'float' object has no attribute 'log'
 The above exception was the direct cause of the following exception:
 
 Traceback (most recent call last):
-  File "/Users/milocobb/Desktop/Recent Swarm Papers/quant_framework/temp_hypothesis.py", line 17, in <module>
+  File "/Users/milocobb/Desktop/Recent Swarm Papers/quant_framework/temp_hypothesis.py", line 17, in `module`
     df['RET'] = np.log(df['SPY_CLOSE'] / df['SPY_CLOSE'].shift(1))
                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/milocobb/Desktop/Recent Swarm Papers/quant_framework/venv/lib/python3.12/site-packages/pandas/core/generic.py", line 2060, in __array_ufunc__
+  File "/Users/milocobb/Desktop/Recent Swarm Papers/quant_framework/venv/lib/python3.12/site-packages/pandas/core/generic.py", line 2060, in \_\_array\_ufunc\_\_
     return arraylike.array_ufunc(self, ufunc, method, *inputs, **kwargs)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   File "/Users/milocobb/Desktop/Recent Swarm Papers/quant_framework/venv/lib/python3.12/site-packages/pandas/core/arraylike.py", line 402, in array_ufunc
-    result = getattr(ufunc, method)(*inputs, **kwargs)
+    result = getattr(ufunc, method)(\*inputs, \*\*kwargs)
              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 TypeError: loop of ufunc does not support argument 0 of type float which has no callable log method
 )
@@ -375,14 +375,14 @@ AttributeError: 'float' object has no attribute 'log'
 The above exception was the direct cause of the following exception:
 
 Traceback (most recent call last):
-  File "/Users/milocobb/Desktop/Recent Swarm Papers/quant_framework/temp_hypothesis.py", line 12, in <module>
+  File "/Users/milocobb/Desktop/Recent Swarm Papers/quant_framework/temp_hypothesis.py", line 12, in `module`
     df['LOG_RET'] = np.log(df['SPY_CLOSE'] / df['SPY_CLOSE'].shift(1))
                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/milocobb/Desktop/Recent Swarm Papers/quant_framework/venv/lib/python3.12/site-packages/pandas/core/generic.py", line 2060, in __array_ufunc__
+  File "/Users/milocobb/Desktop/Recent Swarm Papers/quant_framework/venv/lib/python3.12/site-packages/pandas/core/generic.py", line 2060, in \_\_array\_ufunc\_\_
     return arraylike.array_ufunc(self, ufunc, method, *inputs, **kwargs)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
   File "/Users/milocobb/Desktop/Recent Swarm Papers/quant_framework/venv/lib/python3.12/site-packages/pandas/core/arraylike.py", line 402, in array_ufunc
-    result = getattr(ufunc, method)(*inputs, **kwargs)
+    result = getattr(ufunc, method)(\*inputs, \*\*kwargs)
              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 TypeError: loop of ufunc does not support argument 0 of type float which has no callable log method
 )
@@ -408,3 +408,21 @@ TypeError: loop of ufunc does not support argument 0 of type float which has no 
 [F] Hypothesis_v2_1_1775483902: Node Failure
 [R] Hypothesis_v2_1_1775484085: Regression (Discarded) | Sharpe: 0.19907033279671307
 [R] Hypothesis_v2_1_1775485221: Regression (Discarded) | Sharpe: 0.1413
+[S] Hypothesis_v2_1_1775825291: Yield: 0.1114 | Sharpe: 0.8398
+[F] Hypothesis_v2_1_1775825447: Node Failure
+[F] Hypothesis_v2_2_1775825452: Node Failure
+[F] Hypothesis_v2_3_1775825457: Node Failure
+[F] Hypothesis_v2_4_1775825462: Node Failure
+[F] Hypothesis_v2_5_1775825467: Node Failure
+[F] Hypothesis_v2_6_1775825472: Node Failure
+[F] Hypothesis_v2_7_1775825477: Node Failure
+[R] Hypothesis_v2_1_1775825891: Regression (Discarded) | Sharpe: 0.0504
+[R] Hypothesis_v2_2_1775826234: Regression (Discarded) | Sharpe: 0.2345
+[F] Hypothesis_v2_3_1775826783: Max self-healing attempts reached.
+[R] Hypothesis_v2_4_1775827126: Regression (Discarded) | Sharpe: 0.118
+[R] Hypothesis_v2_5_1775827426: Regression (Discarded) | Sharpe: -0.0824
+[R] Hypothesis_v2_6_1775827619: Regression (Discarded) | Sharpe: 0.1604
+[R] Hypothesis_v2_7_1775827991: Regression (Discarded) | Sharpe: -0.0587
+[R] Hypothesis_v2_8_1775828329: Regression (Discarded) | Sharpe: -0.29792103965563743
+[R] Hypothesis_v2_9_1775828654: Regression (Discarded) | Sharpe: -0.651
+[R] Hypothesis_v2_10_1775828934: Regression (Discarded) | Sharpe: -0.5676

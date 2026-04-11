@@ -30,12 +30,29 @@ class CoderNode:
                        f"2. [BLOCK 12]: Always use 'rolling(1).std()' or 'sq_ret' for current bar risk-scaling. Never use 22+ day lags for the current bar's position size.\n\n" \
                        f"CRITICAL: Output ONLY the high-density logic function. Do not overwrite the base imports."
         
-        msgs_gamma = [{"role": "system", "content": gamma_system}, {"role": "user", "content": prompt_gamma}]
-        draft_code_raw = self.call_llm(msgs_gamma, temperature=0.2, role_context="Gamma")
+        import sys
+        import os
+        sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        from src.core.rlm_scaffold import RLMScaffold
+
+        gamma_rlm = RLMScaffold("Gamma-Coder", self.call_llm)
+        rlm_context = {
+            "STRATEGY_PITCH": pitch,
+            "DATABASE_SCHEMA": schema,
+            "FAILURE_CONTEXT": failure_msg,
+            "INSTITUTIONAL_KNOWLEDGE": knowledge
+        }
         
-        # Extract Block
-        match = re.search(r'```python(.*?)```', draft_code_raw, re.DOTALL)
-        code = match.group(1).strip() if match else draft_code_raw.strip()
+        rlm_prompt = (
+            f"You are the Coder Node. {gamma_system}\n\n"
+            "Task Overview: " + prompt_gamma + "\n\n"
+            "Because you are inside an RLM REPL, you can iteratively draft code fragments into memory buffers "
+            "and inspect them before returning. When you are fully satisfied with your code, "
+            "assign the final raw python logic function block to the variable 'Final'."
+        )
+        
+        code = gamma_rlm.run_repl(rlm_prompt, context_vars=rlm_context, max_iterations=5, temperature=0.2)
+        code = str(code).strip()
         
         # Agent Delta (Final Auditor + Structural Gate)
         delta_info = self.config["agents"]["delta"]

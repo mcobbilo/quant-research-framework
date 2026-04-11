@@ -1,4 +1,5 @@
 # 🧠 Institutional Memory: Quantitative Research Engine
+
 *Compiled via Autonomous Swarm Synthesis (Gemini 3.1 Pro High Context)*
 
 This document serves as the central Nervous System for the quant framework. It catalogs all validated models, rejected strategies, and ultimate quantitative baselines generated across 38+ experimental sessions.
@@ -43,15 +44,21 @@ Do **NOT** attempt to re-explore these hypotheses. They have been empirically pr
 Key structural upgrades deployed to the Swarm environment.
 
 ### 1. AgentHub Transition & Decentralization (`2684655d`)
+
 Transitioned from a monolithic script to an Asynchronous SQLite Event-Driven architecture.
-*   **Orthogonal Nodes**: Split the swarm into `agent_high_compute` (heavy matrix operations) and `agent_low_compute` (elegance over intensity).
-*   **WOLF / HOWL**: Decoupled real-time trade bounds into `trading_parameters.json`. WOLF halts trades locally without LLM latency.
-*   **Kelly-Criterion Architect**: No predictive agent touches the bankroll. Models submit `pre_trade_signal`; the local Risk Architect calculates purely mathematical Expected Value before authorizing standard Half-Kelly allocation.
+
+- **Orthogonal Nodes**: Split the swarm into `agent_high_compute` (heavy matrix operations) and `agent_low_compute` (elegance over intensity).
+- **WOLF / HOWL**: Decoupled real-time trade bounds into `trading_parameters.json`. WOLF halts trades locally without LLM latency.
+- **Kelly-Criterion Architect**: No predictive agent touches the bankroll. Models submit `pre_trade_signal`; the local Risk Architect calculates purely mathematical Expected Value before authorizing standard Half-Kelly allocation.
 
 ### 2. High-Fidelity OSINT & Context Ingestion (`12047a62` & `74c8ea13`)
-*   **Financial MCP Server**: Integrated Anthropic's MCP standard with Gemini 3.1 Pro. The agent now asynchronously calls `get_current_stock_price` and evaluates live market conditions before synthesizing SQLite updates.
-*   **Google Dorking Academy**: Deployed `dork_lab.py` and structured methodology for tracking hidden market configurations and scraping unstructured web intelligence.
+
+
+- **Financial MCP Server**: Integrated Anthropic's MCP standard with Gemini 3.1 Pro. The agent now asynchronously calls `get_current_stock_price` and evaluates live market conditions before synthesizing SQLite updates.
+- **Google Dorking Academy**: Deployed `dork_lab.py` and structured methodology for tracking hidden market configurations and scraping unstructured web intelligence.
 
 ### 3. Red Team Transparency & Stabilisation (`fb78672e` & `fa582ab5`)
-*   **Git Pacthes Only**: Eradicated direct execution of AI-generated `.py` files. All logic updates are physically handled as `.patch` objects and run against `git apply --check` dry-runs to prevent system-wide lockups.
-*   **Batch Transparency Protocol**: All background python "regex" indexing is banned to prevent unmonitored API calls and stalled processes.
+
+
+- **Git Pacthes Only**: Eradicated direct execution of AI-generated `.py` files. All logic updates are physically handled as `.patch` objects and run against `git apply --check` dry-runs to prevent system-wide lockups.
+- **Batch Transparency Protocol**: All background python "regex" indexing is banned to prevent unmonitored API calls and stalled processes.

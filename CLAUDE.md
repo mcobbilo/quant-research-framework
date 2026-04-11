@@ -1,4 +1,4 @@
-## 1. Development Commands
+# 1. Development Commands
 
 - **Backtest**: `./venv/bin/python3 src/experimental/jepa_extractor.py`
 - **Skill Audit**: `./venv/bin/python3 src/skills/base_skill.py`

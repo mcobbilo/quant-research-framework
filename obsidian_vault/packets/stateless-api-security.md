@@ -1,4 +1,4 @@
-Packet: Fail-Closed Stateless Architecture
+# Packet: Fail-Closed Stateless Architecture
 
 - packet_id: security-api-fail-closed-exception
 - source: Phase 139 Red Team

@@ -1,135 +1,182 @@
+import sqlite3
 import pandas as pd
 import numpy as np
-import sqlite3
+from collections import deque
 
-# ====================== DATA LOADING ======================
+# =============================================================================
+# Load and prepare data
+# =============================================================================
 conn = sqlite3.connect('src/data/market_data.db')
 df = pd.read_sql_query("SELECT * FROM core_market_table", conn)
 conn.close()
 
 df.columns = [c.upper() for c in df.columns]
+df = df.ffill()
+df['DATE'] = pd.to_datetime(df['DATE'])
+df = df.sort_index().set_index('DATE')          # ensure chronological order
 
-# Robust target selection (prefer CLOSE or PRICE over first column)
-price_cols = [col for col in df.columns if col in ('CLOSE', 'PRICE', 'ADJ_CLOSE', 'VALUE')]
-target = price_cols[0] if price_cols else df.columns[1] if len(df.columns) > 1 else df.columns[0]
+# Use log-price and compute returns
+price = df['SPY_CLOSE'].values
+X = np.log(price)
+n = len(X)
 
-# ====================== FEATURE ENGINEERING (NO LOOKAHEAD) ======================
-df = df.apply(pd.to_numeric, errors='coerce')
+df['RET'] = np.diff(X, prepend=X[0])
+df['ABS_RET'] = np.abs(df['RET'])
 
-# Forward/backward fill (safe after numeric conversion)
-df = df.ffill().bfill()
+# Causal EWMA volatility (span=15 → λ≈0.935)
+df['SIGMA_HAT'] = (
+    df['ABS_RET'].ewm(span=15, adjust=False, ignore_na=True).mean()
+    * np.sqrt(252)
+)
 
-# Log returns
-df['RET'] = np.log(df[target] / df[target].shift(1))
+sigma_arr = df['SIGMA_HAT'].values.copy()
 
-# IMPORTANT: All predictive features must use only information available at t-1
-df['RET_L1'] = df['RET'].shift(1)
-df['RET_L2'] = df['RET'].shift(2)
+# =============================================================================
+# Strategy parameters
+# =============================================================================
+burnin = 600
+gamma = 0.85
+lambda_base = 0.965
+lambda_adj = 0.018
+long_run_lambda = 0.999
+precision_exp_alpha = 0.65
+precision_exp_w = 0.85
+target_vol = 0.10
 
-df['SIGMA21'] = df['RET'].rolling(window=21, min_periods=10).std().shift(1)
-df['SKEW10']  = df['RET'].rolling(window=10,  min_periods=5).skew().shift(1)
-df['DELTA_VOL'] = df['SIGMA21'].diff()
+# State arrays
+v = np.zeros(n)
+m = np.zeros(n)
+alpha_p = np.zeros(n)
+beta_p = np.zeros(n)
+pi = np.zeros(n)
+bar_pi = np.zeros(n)
+kappa_arr = np.full(n, 1.5)
+w = np.zeros(n)
 
-# Fill NaNs after shifting (burn-in period)
-df['RET'] = df['RET'].fillna(0.0)
-for col in ['RET_L1', 'RET_L2', 'SIGMA21', 'SKEW10', 'DELTA_VOL']:
-    df[col] = df[col].fillna(0.0)
+# Initial conditions
+m[0] = X[0]
+v[0] = 5.0
+alpha_p[0] = 3.0
+beta_p[0] = 0.5
+pi[0] = (v[0] * alpha_p[0]) / (beta_p[0] + 1e-12)
+bar_pi[0] = pi[0]
 
-# ====================== MODEL PARAMETERS ======================
-feature_cols = ['RET_L1', 'RET_L2', 'SIGMA21', 'SKEW10', 'DELTA_VOL']
-X = df[feature_cols].values
-rets = df['RET'].values
-sigmas = df['SIGMA21'].values
+# Rolling history for percentile (last 252 days only)
+pi_history = deque(maxlen=252)
 
-n = len(df)
-K = 4
-lam = 0.96          # decay factor
-burnin = 500
+# =============================================================================
+# Main recursive loop
+# =============================================================================
+for t in range(1, n):
+    if t < burnin:
+        v[t] = v[t-1]
+        m[t] = m[t-1]
+        alpha_p[t] = alpha_p[t-1]
+        beta_p[t] = beta_p[t-1]
+        pi[t] = pi[t-1]
+        bar_pi[t] = bar_pi[t-1]
+        w[t] = 0.0
+        pi_history.append(pi[t])
+        continue
 
-if n <= burnin + 10:
-    res_yield = 0.0
-    res_sharpe = 0.0
-else:
-    # Initialize GMM-style parameters
-    pi = np.full(K, 1.0 / K)
-    mu = np.zeros((K, len(feature_cols)))
-    Sigma = np.array([np.eye(len(feature_cols)) * 0.01 for _ in range(K)])
-    
-    nk = np.full(K, 10.0)
-    m_k = np.zeros(K)      # mean return per cluster
-    v_k = np.ones(K) * 0.0001
+    kappa_tm1 = kappa_arr[t-1]
+    kappa_t = kappa_arr[t]
 
-    pos = np.zeros(n)
+    # ------------------------------------------------------------------
+    # Adaptive kappa from autocorrelation (purely backward-looking)
+    # ------------------------------------------------------------------
+    if t > 252:
+        past_rets = np.diff(X[t-252:t])                     # returns up to t-1
+        if len(past_rets) > 5:
+            rho = np.corrcoef(past_rets[:-1], past_rets[1:])[0, 1]
+            rho = np.clip(rho, 0.05, 0.95)
+            k_t = -np.log(rho)
+            kappa_arr[t] = np.clip(k_t, 0.75, 2.4)
+            kappa_t = kappa_arr[t]
 
-    for t in range(burnin, n - 1):
-        x_t = X[t].reshape(1, -1)
-        
-        # E-step: compute responsibilities
-        gamma = np.zeros(K)
-        for k in range(K):
-            diff = x_t - mu[k]
-            sig_k = Sigma[k] + 1e-6 * np.eye(len(feature_cols))
-            inv = np.linalg.inv(sig_k)
-            mah = np.dot(diff, np.dot(inv, diff.T))[0, 0]
-            det = np.linalg.det(sig_k)
-            pdf = np.exp(-0.5 * mah) / np.sqrt((2 * np.pi)**len(feature_cols) * det)
-            gamma[k] = pi[k] * pdf
-        
-        gamma /= (gamma.sum() + 1e-12)
+    # ------------------------------------------------------------------
+    # Volatility regime detection (all data ≤ t-1)
+    # ------------------------------------------------------------------
+    vol20 = np.std(df['RET'].iloc[t-20:t].values) * np.sqrt(252) if t > 20 else 0.15
 
-        # Predictive moments across clusters
-        m_bar = np.sum(gamma * m_k)
-        v_bar = np.sum(gamma * (v_k + (m_k - m_bar)**2))
-        
-        ic = m_bar / (v_bar + 1e-8)
-        scale = 1.0 / np.sqrt(v_bar + 1e-8)
-        w = np.tanh(8.0 * ic * scale)
-
-        # Risk control
-        if gamma.max() < 0.35:
-            w *= 0.3
-            
-        vol_t = max(sigmas[t], 0.01)
-        w *= 0.12 / vol_t                     # volatility target 12%
-        pos[t] = np.clip(w, -2.0, 2.0)
-
-        r_next = rets[t + 1]
-
-        # Online parameter update
-        old_nk = nk.copy()
-        for k in range(K):
-            nk[k] = lam * old_nk[k] + (1 - lam) * gamma[k]
-            
-            # Update feature distribution
-            mu[k] = (lam * old_nk[k] * mu[k] + (1 - lam) * gamma[k] * x_t[0]) / nk[k]
-            diff = x_t[0] - mu[k]
-            Sigma[k] = (lam * (old_nk[k] / nk[k]) * Sigma[k] +
-                       (1 - lam) * (gamma[k] / nk[k]) * np.outer(diff, diff) +
-                       1e-6 * np.eye(len(feature_cols)))
-            
-            pi[k] = lam * pi[k] + (1 - lam) * gamma[k]
-            
-            # Update predictive return distribution
-            m_k[k] = (lam * old_nk[k] * m_k[k] + (1 - lam) * gamma[k] * r_next) / nk[k]
-            v_k[k] = (lam * old_nk[k] * v_k[k] +
-                     (1 - lam) * gamma[k] * (r_next - m_k[k])**2) / nk[k]
-
-        pi /= pi.sum()
-
-    # ====================== PERFORMANCE ======================
-    strategy_rets = pos[burnin:n-1] * rets[burnin+1:n]
-    
-    if len(strategy_rets) > 0:
-        cum_yield = np.prod(1 + strategy_rets) - 1
-        mean_ret = np.mean(strategy_rets) * 252
-        std_ret = np.std(strategy_rets) * np.sqrt(252)
-        sharpe = mean_ret / std_ret if std_ret > 0 else 0.0
+    if t > 252:
+        roll_vols = (df['RET'].iloc[t-252:t]
+                     .rolling(20, min_periods=5)
+                     .std(ddof=0).values * np.sqrt(252))
+        vol_med = np.nanmedian(roll_vols)
+        high_vol = vol20 > 1.4 * vol_med if not np.isnan(vol_med) else False
     else:
-        cum_yield = 0.0
-        sharpe = 0.0
+        high_vol = False
 
-    res_yield = cum_yield
-    res_sharpe = sharpe
+    lambda_t = lambda_base - lambda_adj * (1.0 if high_vol else 0.0)
 
-print("RESULT_YIELD: {:.4f}".format(res_yield))
-print("RESULT_SHARPE: {:.4f}".format(res_sharpe))
+    # ------------------------------------------------------------------
+    # Bayesian update (mean + precision)
+    # ------------------------------------------------------------------
+    eps = (X[t] - X[t-1]) - kappa_tm1 * (m[t-1] - X[t-1])   # prediction error
+
+    v[t] = lambda_t * v[t-1] + 1.0
+    m[t] = (lambda_t * v[t-1] * m[t-1] + (eps / kappa_tm1)) / v[t]
+
+    alpha_p[t] = lambda_t * alpha_p[t-1] + 0.5
+
+    # err_term should be the same prediction error (original code had a bug)
+    err_term = eps
+    beta_p[t] = (lambda_t * beta_p[t-1] +
+                 (lambda_t * v[t-1] / (2.0 * v[t])) * (err_term ** 2))
+
+    pi[t] = (v[t] * alpha_p[t]) / (beta_p[t] + 1e-12)
+    bar_pi[t] = long_run_lambda * bar_pi[t-1] + (1.0 - long_run_lambda) * pi[t]
+
+    pi_history.append(pi[t])
+
+    # 25th percentile of recent precision values
+    pi_25 = np.percentile(pi_history, 25)
+
+    # ------------------------------------------------------------------
+    # Signal construction with precision scaling
+    # ------------------------------------------------------------------
+    alpha_t = kappa_t * (m[t] - X[t])
+
+    if pi[t] > pi_25 + 1e-8:
+        alpha_t *= (pi[t] / (bar_pi[t] + 1e-8)) ** precision_exp_alpha
+    else:
+        alpha_t = 0.0
+
+    sig_t = max(sigma_arr[t], 0.01)
+    precision_factor = (pi[t] / (bar_pi[t] + 1e-8)) ** precision_exp_w if bar_pi[t] > 0 else 0.0
+
+    w_t = (alpha_t / (gamma * sig_t ** 2)) * precision_factor
+
+    # Volatility targeting
+    port_vol_approx = abs(w_t) * sig_t
+    if port_vol_approx > 1e-8:
+        w_t *= target_vol / port_vol_approx
+
+    # Minimum signal strength filter
+    min_alpha_hurdle = 0.0008 * sig_t
+    if abs(alpha_t) < min_alpha_hurdle or pi[t] < pi_25:
+        w_t = 0.0
+
+    w[t] = np.clip(w_t, -10.0, 10.0)
+
+# =============================================================================
+# Performance (returns realized AFTER signal is formed → no lookahead)
+# =============================================================================
+dX = np.diff(X)
+strat_returns = w[:-1] * dX                     # w[t] multiplies return from t → t+1
+
+# Drop burn-in period
+if len(strat_returns) > burnin:
+    strat_returns = strat_returns[burnin:]
+
+mean_ret = np.mean(strat_returns)
+std_ret = np.std(strat_returns)
+total_yield = np.sum(strat_returns)
+sharpe = (mean_ret / std_ret * np.sqrt(252)) if std_ret > 1e-8 else 0.0
+
+# Reasonable clipping for reporting
+total_yield = np.clip(total_yield, -1.0, None)
+
+print("RESULT_YIELD: {:.4f}".format(total_yield))
+print("RESULT_SHARPE: {:.4f}".format(sharpe))

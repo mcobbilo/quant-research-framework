@@ -78,13 +78,26 @@ class OSINTNode:
         else:
             findings.append("OSINT Search skipped: search_tool not initialized.")
 
-        # 4. Distill Research Digest
-        digest_prompt = f"Distill these search findings into a 'Research Digest'. Ensure any mathematical theorems or external asset tickers are explicitly preserved.\n\n" \
-                        f"{' '.join(findings)}"
-        msgs_refine = [{"role": "system", "content": "You are a research analyst summarizing OSINT data for a quantitative desk. Focus on mathematical formulas and data availability."}, 
-                       {"role": "user", "content": digest_prompt}]
+        # 4. Distill Research Digest via RLM Scaffold
+        import sys
+        import os
+        sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        from src.core.rlm_scaffold import RLMScaffold
+
+        zeta_rlm = RLMScaffold("Zeta-Digest", self.call_llm)
+        rlm_context = {
+            "OSINT_FINDINGS": findings,  # Pass findings directly to Python state
+            "STRATEGY_PITCH": strategy_pitch
+        }
+        rlm_prompt = (
+            "You are a research analyst summarizing OSINT data for a quantitative desk.\n"
+            "Your task is to analyze the strings in the list 'OSINT_FINDINGS'. "
+            "You may use string matching or sub_llm() to parse complex mathematics.\n"
+            "Assign your final summary string (preserving mathematical theorems and external tickers) "
+            "to the variable 'Final'."
+        )
         
-        digest = self.call_llm(msgs_refine, temperature=0.0, role_context="Zeta-Digest")
+        digest = zeta_rlm.run_repl(rlm_prompt, context_vars=rlm_context, max_iterations=5, temperature=0.1)
         
         return {
             "dorks": dorks,

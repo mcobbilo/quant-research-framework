@@ -25,6 +25,10 @@
     "zeta": {
       "system": "You are Agent Zeta, the OSINT and Research Specialist. Your mission is to structure high-fidelity Google Dorks to verify mathematical claims and find structured market data.",
       "template": "You are Agent Zeta, the OSINT architect. \nAgent Alpha has proposed a mathematical trading thesis:\n\n{pitch}\n\nYour goal is to construct 3 precise Google Dorks to find ArXiv papers, CSV dataset, or GitHub implementations that validate or invalidate the assumptions in this pitch. \nRefine the core strategy parameters based on these searches.\n\nOutput your findings and the refined strategy pitch."
+    },
+    "epsilon": {
+      "system": "You are Agent Epsilon, the EGGROLL Parameter Architect.",
+      "template": "You are operating inside an RLM REPL.\nYour singular task is to take a raw Python trading strategy and refactor it so ALL numeric logic parameters (lookbacks, z-scores, percentiles, gamma, learning rates) are pulled from a single global dictionary named EGGROLL_PARAMS at the top of the file.\n\nInstructions:\n1. Initialize EGGROLL_PARAMS = {...} at the top.\n2. Replace all hardcoded values in the logic with Dictionary references.\n3. Verify the logic still functions perfectly.\n4. When done, assign your final string of Python code to the variable 'Final'."
     }
   },
   "benchmarks": {

@@ -13,13 +13,14 @@ from council_voice_orchestrator import CouncilVoiceOrchestrator
 from src.core.mcp_data_server import MCP 
 from src.core.memory_synthesizer import MemorySynthesizer 
 from src.core.harness_evaluator import HarnessEvaluator 
-from src.core.adversarial_mocks import generate_degenerate_mocks 
+from src.core.adversarial_mocks import generate_degenerate_mocks, generate_adversarial_paths
 
 # V2.0 Node Imports
 from src.core.nodes.strategy_node import StrategyNode
 from src.core.nodes.coder_node import CoderNode
 from src.core.nodes.analyzer_node import AnalyzerNode
 from src.core.nodes.osint_node import OSINTNode
+from src.core.nodes.optimizer_node import OptimizerNode
 
 MEMORY_FILE = "MEMORY.md"
 VICTORIES_DIR = "victories"
@@ -131,6 +132,7 @@ def call_llm(messages, temperature=0.6, role_context="Agent"):
 STRATEGY_NODE = StrategyNode(HARNESS_CONFIG, call_llm)
 CODER_NODE = CoderNode(HARNESS_CONFIG, call_llm)
 ANALYZER_NODE = AnalyzerNode(HARNESS_CONFIG, call_llm)
+OPTIMIZER_NODE = OptimizerNode(HARNESS_CONFIG, call_llm, execute_and_evaluate)
 
 # Agent Zeta (OSINT) - Initialized with the system search tool and deep-research path
 DEEP_RESEARCH_PATH = "/Users/milocobb/.gemini/antigravity/skills/deep-research/scripts/research.py"
@@ -158,18 +160,27 @@ def execute_and_evaluate(code, hyp_name):
         return {"status": "failure", "reason": str(e)}
 
 def sanity_check_strategy(code):
-    mocks = generate_degenerate_mocks()
+    mocks = generate_adversarial_paths()
     db_path = os.path.join("src", "data", "market_data.db")
     backup_db = db_path + ".bak"
     try:
         if os.path.exists(db_path): shutil.copy(db_path, backup_db)
         for name, m_df in mocks.items():
             conn = sqlite3.connect(db_path)
+            # Ensure proper schema serialization
             m_df.to_sql('core_market_table', conn, if_exists='replace', index=False)
             conn.close()
+            
             res = execute_and_evaluate(code, "Sanity")
             if res['status'] == 'failure' and 'Runtime Error' in res['reason']:
-                return False, f"Crash on {name}: {res['reason']}"
+                return False, f"Crash/Math Error on synthetic '{name}': {res['reason']}"
+                
+            # Strict synthetic Sharpe check threshold (Optional soft barrier)
+            # If the strategy has massive drawdowns or completely fails to compute structural Yield/Sharpe
+            if res['status'] == 'success' and res['sharpe'] < -2.0:
+                print(f"[Synthetic Check] WARNING: Strategy had extreme negative Sharpe on {name}: {res['sharpe']}")
+                # We could return False here if we want absolute restriction
+                
         return True, ""
     finally:
         if os.path.exists(backup_db): shutil.move(backup_db, db_path)
@@ -224,6 +235,9 @@ def main_loop(max_iterations=10, mode="research"):
     os.makedirs(VICTORIES_DIR, exist_ok=True)
     schema = get_database_schema()
     
+    BEST_FAILED_SHARPE = -100.0
+    BEST_FAILED_CODE = None
+    
     for i in range(1, max_iterations + 1):
         global CHAMPION_SHARPE, CHAMPION_CODE
         result = run_research_sequence(schema, i, CHAMPION_SHARPE, CHAMPION_CODE, mode=mode)
@@ -234,6 +248,11 @@ def main_loop(max_iterations=10, mode="research"):
             new_yield = result['metrics']['yield']
             
             if CHAMPION_SHARPE > -1.0 and new_sharpe < CHAMPION_SHARPE:
+                # Track best failure for EGGROLL
+                if new_sharpe > BEST_FAILED_SHARPE:
+                    BEST_FAILED_SHARPE = new_sharpe
+                    BEST_FAILED_CODE = result['code']
+                    
                 print(f"[REGRESSION] !! Sharpe dropped ({new_sharpe:.4f} < {CHAMPION_SHARPE:.4f}) !!")
                 perf_delta = (new_sharpe - CHAMPION_SHARPE) / CHAMPION_SHARPE if CHAMPION_SHARPE != 0 else -1.0
                 ANALYZER_NODE.execute(result['code'], f"REGRESSION: Sharpe dropped from {CHAMPION_SHARPE} to {new_sharpe}", is_regression=True, performance_delta=perf_delta)
@@ -252,6 +271,23 @@ def main_loop(max_iterations=10, mode="research"):
             write_memory(f"[F] {hyp_name}: {reason[:100]}")
         
         time.sleep(5)
+        
+    # POST-SWEEP EGGROLL TRIGGER
+    if BEST_FAILED_CODE:
+        print("\n==================================================")
+        print(" SWEEP CONCLUDED. INITIATING [EGGROLL] RESCUE OP ")
+        print("==================================================")
+        print(f"[EGGROLL] Base Failed Sharpe: {BEST_FAILED_SHARPE}")
+        optim_code, optim_sharpe = OPTIMIZER_NODE.execute(BEST_FAILED_CODE)
+        
+        if optim_sharpe > CHAMPION_SHARPE and CHAMPION_SHARPE > -1.0:
+            print(f"[EGGROLL-CHAMPION] >> ES Recovered a Champion! New Peak: {optim_sharpe:.4f} <<")
+            with open(os.path.join(VICTORIES_DIR, f"EGGROLL_Rescued_{int(time.time())}.py"), "w") as f:
+                f.write(optim_code)
+        elif optim_sharpe > BEST_FAILED_SHARPE:
+            print(f"[EGGROLL] Partial Success: Improved from {BEST_FAILED_SHARPE} to {optim_sharpe}")
+            with open(os.path.join(VICTORIES_DIR, f"EGGROLL_Improved_{int(time.time())}.py"), "w") as f:
+                f.write(optim_code)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
