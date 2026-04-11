@@ -13,6 +13,9 @@ def run_tft_backtest():
     df.columns = [c.replace(".", "_") for c in df.columns]
     df = df.fillna(0)
 
+    if 'SPY' in df.columns:
+        df['SPY_Log_Return'] = np.log(df['SPY'] / df['SPY'].shift(1)).fillna(0)
+
     # Recreate the exact FOMC smoothing state the model trained on
     if 'directional_impact' in df.columns:
         df['fomc_regime'] = df['directional_impact'].ewm(span=21, adjust=False).mean()
@@ -26,11 +29,11 @@ def run_tft_backtest():
     training = TimeSeriesDataSet(
         df,
         time_idx="time_idx",
-        target="target_SPY_fwd21",          
+        target="SPY_Log_Return",          
         group_ids=["group_id"],
         max_encoder_length=252,
         max_prediction_length=max_prediction_length,
-        time_varying_unknown_reals=[c for c in df.columns if c not in ["time_idx","group_id", "day_of_year_sin", "month"] and not c.startswith("target")],
+        time_varying_unknown_reals=[c for c in df.columns if c not in ["time_idx","group_id", "day_of_year_sin", "month"] and not c.startswith("target") and c != "SPY_Log_Return"],
         time_varying_known_reals=["day_of_year_sin", "month"] if "day_of_year_sin" in df.columns else [],
         add_relative_time_idx=True,
     )
@@ -57,8 +60,10 @@ def run_tft_backtest():
             out = model(x)
             p = model.to_prediction(out)
             
-            final_p = p[:, -1].numpy()
-            final_idx = x["decoder_time_idx"][:, -1].numpy()
+            # The model predicts max_prediction_length consecutive log returns. Sum them for the total forward expected scalar.
+            final_p = p.sum(dim=1).numpy()
+            # Map index exactly flush backward to the end of the encoder step! (0th decoder step - 1)
+            final_idx = x["decoder_time_idx"][:, 0].numpy() - 1
             
             preds_list.extend(final_p)
             idx_list.extend(final_idx)
