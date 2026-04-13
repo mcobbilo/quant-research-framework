@@ -1,11 +1,13 @@
 import re
 import os
+from src.core.mempalace.agent_diary import AgentDiary
 
 
 class StrategyNode:
     def __init__(self, harness_config, call_llm_func):
         self.config = harness_config
         self.call_llm = call_llm_func
+        self.diary = AgentDiary("StrategyNode")
 
     def _verify_integrity(self, knowledge_path):
         if not os.path.exists(knowledge_path):
@@ -51,6 +53,8 @@ class StrategyNode:
 
         # Agent Alpha
         alpha_info = self.config["agents"]["alpha"]
+        recent_thoughts = self.diary.read(last_n=5)
+        memory = f"{memory}\n\nStrategyNode Internal Diary Context:\n{recent_thoughts}"
         prompt_alpha = alpha_info["template"].format(
             memory=memory,
             inspiration=inspiration,
@@ -78,4 +82,6 @@ class StrategyNode:
         ]
         critique = self.call_llm(msgs_beta, temperature=0.6, role_context="Beta")
 
+        self.diary.write(f"Generated Pitch: {pitch[:100]}...")
+        self.diary.write(f"Received Beta Critique: {critique[:100]}...")
         return {"pitch": pitch, "critique": critique}

@@ -1,0 +1,34 @@
+Loading Genuine Rebuilt Market Data...
+
+Locating newest PyTorch Lightning Checkpoint...
+Loading checkpoint: /Users/milocobb/Desktop/Recent Swarm Papers/quant_framework/lightning_logs/version_1163/checkpoints/epoch=0-step=235.ckpt
+Executing Neural Inference Over Entire History (This computes the 27yr evaluation)...
+
+================================================================================
+ GENUINE YEAR-BY-YEAR IN-SAMPLE & OUT-OF-SAMPLE TEST 
+================================================================================
+Year   | Strategy   | SPY        | Strat DD   | SPY DD     | Status
+--------------------------------------------------------------------------------
+2009   |    18.24% |    27.68% |    -5.05% |    -5.67% | IN-SAMPLE (TRAINING)
+2010   |    15.06% |    15.06% |   -15.70% |   -15.70% | IN-SAMPLE (TRAINING)
+2011   |     1.90% |     1.90% |   -18.37% |   -18.37% | IN-SAMPLE (TRAINING)
+2012   |    15.99% |    15.99% |    -7.35% |    -7.35% | IN-SAMPLE (TRAINING)
+2013   |    32.31% |    32.31% |    -5.55% |    -5.55% | IN-SAMPLE (TRAINING)
+2014   |    10.39% |    13.46% |    -7.19% |    -7.27% | IN-SAMPLE (TRAINING)
+2015   |     0.11% |     1.23% |    -5.92% |   -11.91% | IN-SAMPLE (TRAINING)
+2016   |     9.20% |    12.00% |    -9.19% |    -9.19% | IN-SAMPLE (TRAINING)
+2017   |    18.65% |    21.71% |    -2.22% |    -2.61% | IN-SAMPLE (TRAINING)
+2018   |    -2.78% |    -4.57% |   -24.83% |   -19.35% | IN-SAMPLE (TRAINING)
+2019   |    31.22% |    31.22% |    -6.62% |    -6.62% | IN-SAMPLE (TRAINING)
+2020   |    45.23% |    18.33% |   -18.47% |   -33.72% | IN-SAMPLE (TRAINING)
+2021   |    28.73% |    28.73% |    -5.11% |    -5.11% | IN-SAMPLE (TRAINING)
+2022   |   -23.86% |   -18.18% |   -25.44% |   -24.50% | IN-SAMPLE (TRAINING)
+2023   |    26.31% |    26.18% |    -9.97% |    -9.97% | IN-SAMPLE (TRAINING)
+2024   |    21.87% |    24.89% |    -8.41% |    -8.41% | IN-SAMPLE (TRAINING)
+2025   |    16.99% |    16.99% |   -18.76% |   -18.76% | IN-SAMPLE (TRAINING)
+
+================================================================================
+ CUMULATIVE 27-YEAR RETURNS 
+================================================================================
+Total Cumulative Strategy Return: 896.11%
+Total Cumulative SPY (Benchmark): 934.86%

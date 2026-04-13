@@ -426,3 +426,6 @@ TypeError: loop of ufunc does not support argument 0 of type float which has no 
 [R] Hypothesis_v2_8_1775828329: Regression (Discarded) | Sharpe: -0.29792103965563743
 [R] Hypothesis_v2_9_1775828654: Regression (Discarded) | Sharpe: -0.651
 [R] Hypothesis_v2_10_1775828934: Regression (Discarded) | Sharpe: -0.5676
+
+[R] Hypothesis_v2_1_1775995576: Regression (Discarded) | Sharpe: 0.1389
+[F] Hypothesis_v2_2_1775996081: Max self-healing attempts reached.

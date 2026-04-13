@@ -269,9 +269,27 @@ def run_xgboost_audit(seed=0, noise_std=0.0, guillotine=False, test_name="BASELI
     peak = cum.expanding(min_periods=1).max()
     mdd = ((cum / peak) - 1).min()
 
-    print(
-        f"[{test_name}] PHASE 126 XGBOOST COMPLETE | Asset Yield: {base_ret:.2f}x | Model Yield: {final_ret:.2f}x | Max DD: {mdd:.2%}"
-    )
+    print(f"[{test_name}] PHASE 126 XGBOOST COMPLETE | Asset Yield: {base_ret:.2f}x | Model Yield: {final_ret:.2f}x | Max DD: {mdd:.2%}")
+    
+    df_cont['year'] = df_cont['ds'].dt.year
+    yearly_strat = df_cont.groupby('year')['strategy_return'].apply(lambda x: (1 + x).prod() - 1)
+    yearly_asset = df_cont.groupby('year')['asset_return'].apply(lambda x: (1 + x).prod() - 1)
+    
+    print("\n" + "="*40)
+    print(" YEAR BY YEAR PERFORMANCE")
+    print("="*40)
+    print(f"{'Year':<6} | {'Strategy':<12} | {'S&P 500':<12} | {'Diff'}")
+    print("-"*40)
+    for yr in yearly_strat.index:
+        y_s = yearly_strat[yr]
+        y_a = yearly_asset[yr]
+        diff = y_s - y_a
+        print(f"{yr:<6} | {y_s:>11.2%} | {y_a:>11.2%} | {diff:>+7.2%}")
+    print("="*40)
+    print(f"TOTAL  | {final_ret-1:>11.2%} | {base_ret-1:>11.2%} | {final_ret - base_ret:>+7.2%}")
+    print(f"MAX DD | {mdd:>11.2%} | {'N/A':>11} |")
+    print("="*40 + "\n")
+    
     return final_ret, mdd
 
 

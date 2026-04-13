@@ -1,12 +1,14 @@
 import os
 import re
 import sys
+from src.core.mempalace.agent_diary import AgentDiary
 
 
 class CoderNode:
     def __init__(self, harness_config, call_llm_func):
         self.config = harness_config
         self.call_llm = call_llm_func
+        self.diary = AgentDiary("CoderNode")
 
     def _verify_syntax(self, code):
         try:
@@ -20,6 +22,9 @@ class CoderNode:
 
         # Agent Gamma (The Coder)
         gamma_info = self.config["agents"]["gamma"]
+        coder_history = self.diary.read(last_n=5)
+        if coder_history:
+            knowledge = f"{knowledge}\n\nCoderNode Past Snippets:\n{coder_history}"
 
         # [V2.1 ATOMIC PATCHING] - Define the 'Logic Only' Request
         # Instead of the whole file, we're asking for the function body
@@ -28,7 +33,8 @@ class CoderNode:
             f"{gamma_info['system']}\n\nINSTITUTIONAL KNOWLEDGE (MANDATORY COMPLIANCE):\n{knowledge}\n\n"
             f"CRITICAL RULES (PHASE 14 HARDENING):\n"
             f"1. [BLOCK 11 - ABSOLUTE REQUIREMENT]: Never hardcode the string 'SPY_CLOSE' or any specific ticker. Always map the target asset from the provided 'schema' argument. Example: `target = schema[0] if isinstance(schema, list) else 'SPY_CLOSE'`.\n"
-            f"2. [BLOCK 12]: Always use 'rolling(1).std()' or 'sq_ret' for current bar risk-scaling. Never use 22+ day lags for the current bar's position size.\n\n"
+            f"2. [BLOCK 12]: Always use 'rolling(1).std()' or 'sq_ret' for current bar risk-scaling. Never use 22+ day lags for the current bar's position size.\n"
+            f"3. [BLOCK 13 - SECURITY]: DO NOT write `import sqlite3`, `os`, or `sys` anywhere in your code. The execution harness explicitly blacklists these for security and will kill your process. Assume data arrays are passed automatically.\n\n"
             f"CRITICAL: Output ONLY the high-density logic function. Do not overwrite the base imports."
         )
 
@@ -88,4 +94,5 @@ class CoderNode:
                 match.group(1).strip() if match else hardened_code_raw.strip()
             )
 
+        self.diary.write(f"[Success] Delivered hardened code of length {len(hardened_code)} chars.")
         return hardened_code

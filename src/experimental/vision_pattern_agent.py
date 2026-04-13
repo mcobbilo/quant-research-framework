@@ -33,18 +33,20 @@ def execute_vision_pattern_agent(target_date=None):
 
     if target_date:
         query = f"""
-        SELECT Date, SPY_OPEN as Open, SPY_HIGH as High, SPY_LOW as Low, SPY_CLOSE as Close, SPY_VOLUME as Volume
+        SELECT Date, SPY_OPEN as Open, SPY_HIGH as High, SPY_LOW as Low, SPY_CLOSE as Close, SPY_VOLUME as Volume,
+               VIX_OPEN, VIX_HIGH, VIX_LOW, VIX_CLOSE
         FROM core_market_table
         WHERE Date <= '{target_date}'
         ORDER BY Date DESC
-        LIMIT 90
+        LIMIT 300
         """
     else:
         query = """
-        SELECT Date, SPY_OPEN as Open, SPY_HIGH as High, SPY_LOW as Low, SPY_CLOSE as Close, SPY_VOLUME as Volume
+        SELECT Date, SPY_OPEN as Open, SPY_HIGH as High, SPY_LOW as Low, SPY_CLOSE as Close, SPY_VOLUME as Volume,
+               VIX_OPEN, VIX_HIGH, VIX_LOW, VIX_CLOSE
         FROM core_market_table
         ORDER BY Date DESC
-        LIMIT 90
+        LIMIT 300
         """
     df = pd.read_sql(query, conn, index_col="Date")
     conn.close()
@@ -52,9 +54,32 @@ def execute_vision_pattern_agent(target_date=None):
     # Needs to be sorted chronologically for mplfinance
     df.index = pd.to_datetime(df.index)
     df = df.sort_index()
+    
+    # Construct the native VIX physics array
+    vix_df = pd.DataFrame({
+        'Open': df['VIX_OPEN'],
+        'High': df['VIX_HIGH'],
+        'Low': df['VIX_LOW'],
+        'Close': df['VIX_CLOSE'],
+        'Volume': 0  # Dummy vector to bypass mplfinance strict checking
+    })
+    
+    # Calculate Bollinger Bands natively on the VIX
+    vix_df['SMA_20'] = vix_df['Close'].rolling(window=20).mean()
+    vix_df['StdDev'] = vix_df['Close'].rolling(window=20).std()
+    vix_df['Upper'] = vix_df['SMA_20'] + (vix_df['StdDev'] * 2)
+    vix_df['Lower'] = vix_df['SMA_20'] - (vix_df['StdDev'] * 2)
+    
+    # Calculate Moving Averages on the broader 300-day window
+    df['SMA_50'] = df['Close'].rolling(window=50).mean()
+    df['SMA_200'] = df['Close'].rolling(window=200).mean()
+    
+    # Isolate strictly the 90-day focal period for the Vision Agent
+    df = df.tail(90)
+    vix_df = vix_df.tail(90)
 
     print(
-        f"{CYAN}[Vision Agent] Rendering 90-Day High-Res Candlestick Geometry...{RESET}"
+        f"{CYAN}[Vision Agent] Rendering 90-Day High-Res Candlestick Geometry with 50/200 SMAs & VIX Bollinger Mechanics...{RESET}"
     )
 
     # Create the chart in memory (BytesIO)
@@ -65,6 +90,16 @@ def execute_vision_pattern_agent(target_date=None):
         up="g", down="r", edge="inherit", wick="inherit", volume="in", ohlc="i"
     )
     s = mpf.make_mpf_style(marketcolors=mc, gridstyle=":", y_on_right=False)
+    
+    # Configure custom subplots for moving averages and VIX panel
+    apdict = [
+        mpf.make_addplot(df['SMA_50'], color='cyan', width=1.5),
+        mpf.make_addplot(df['SMA_200'], color='magenta', width=1.5),
+        mpf.make_addplot(vix_df, type='candle', panel=2, ylabel='VIX'),
+        mpf.make_addplot(vix_df['Upper'], color='red', panel=2, width=1.0, secondary_y=False),
+        mpf.make_addplot(vix_df['Lower'], color='green', panel=2, width=1.0, secondary_y=False),
+        mpf.make_addplot(vix_df['SMA_20'], color='yellow', linestyle='dashed', panel=2, width=1.0, secondary_y=False)
+    ]
 
     # [PHASE 145: CONTEXT OPTIMIZATION]
     # Slash image tokens/latency by reducing DPI from 300 to 100 and scale from 1.5 to 1.0.
@@ -74,7 +109,9 @@ def execute_vision_pattern_agent(target_date=None):
         type="candle",
         volume=True,
         style=s,
-        title="SPY 90-Day Institutional Tape",
+        addplot=apdict,
+        panel_ratios=(4, 1, 2),
+        title="SPY 90-Day Institutional Tape (w/ VIX & SMAs)",
         ylabel="Price ($)",
         ylabel_lower="Volume",
         figratio=(16, 9),
@@ -103,22 +140,39 @@ def execute_vision_pattern_agent(target_date=None):
 
     client = genai.Client(api_key=os.environ.get("GOOGLE_API_KEY"))
 
-    system_prompt = """
+    latest_spy_close = df['Close'].iloc[-1]
+    latest_sma_50 = df['SMA_50'].iloc[-1]
+    latest_sma_200 = df['SMA_200'].iloc[-1]
+    latest_vix_close = vix_df['Close'].iloc[-1]
+    latest_vix_upper = vix_df['Upper'].iloc[-1]
+
+    system_prompt = f"""
     You are an elite institutional quantitative trader specializing in structural pattern recognition.
     You will be provided a high-resolution 90-Day SPY candlestick chart.
+    
+    [CRITICAL NUMERICAL STATE]
+    To calculate exact crossovers without visual ambiguity, base your logic on these current mathematically derived values:
+    - SPY Latest Close: ${latest_spy_close:.2f}
+    - 50-Day SMA (Cyan Line): ${latest_sma_50:.2f}
+    - 200-Day SMA (Magenta Line): ${latest_sma_200:.2f}
+    - The bottom panel is the VIX (Volatility Index) with its 20-Day Bollinger Bands.
+    - VIX Latest Close: {latest_vix_close:.2f}
+    - VIX Upper Bollinger Band (Red Line): {latest_vix_upper:.2f}
     
     Your directive:
     1. Scan the geometric price structure (Higher Highs, Lower Lows, Consolidation).
     2. Identify classical technical patterns (Head and Shoulders, Bear Flags, Bull Flags, Falling Wedges, Double Bottom/Top, etc.).
-    3. Output your assessment in strict JSON format matching exactly the schema below.
+    3. Evaluate the price interaction mathematically using the numeric state provided, noting relationships to the 50-Day and 200-Day SMAs (e.g., trend support/resistance, slope trajectory).
+    4. Factor the VIX panel into your analysis: mathematically use the provided VIX values to look for volatility structurally breaking outside the upper Bollinger Band (capitulation).
+    5. Output your assessment in strict JSON format matching exactly the schema below.
     
     JSON Schema:
-    {
+    {{
       "detected_pattern": "short pattern name",
       "trend_classification": "Bullish|Bearish|Neutral",
       "confidence": 0.85,
-      "rationale": "2-3 sentences explaining exactly what structural weakness or strength you see."
-    }
+      "rationale": "2-3 sentences explaining exactly what structural weakness or strength you see, citing the explicit moving averages or VIX dislocations if relevant."
+    }}
     """
 
     try:

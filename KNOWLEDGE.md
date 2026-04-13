@@ -403,3 +403,27 @@ This ledger summarizes causal insights distilled by **Agent Epsilon** from backt
 - **ParentHash**: fe1b60cd3a3bc0be479fda78ded7c3cbb8213e379783c8594a9cd2fdf0ad71e4
 
 - **Hash**: 6d164e68c9fea23924ab54c0c03d188e303687a63a0a43d4dca78bc5ee062e05
+
+---
+
+### [BLOCK_33] | REGRESSION-Refinement
+- **Context**: Performance Delta: -0.8346
+- **Lesson**: Compute all deviations against prior EWMA state before any update, and use window std (not single-bar return) for volatility scaling.
+- **ParentHash**: 6d164e68c9fea23924ab54c0c03d188e303687a63a0a43d4dca78bc5ee062e05
+- **Hash**: 2a237271c6a9c2b386a5b4fd7614c2f570e9bfc8bd05b2257e864a9fb115eb7e
+
+---
+
+### [BLOCK_34] | CAUSAL-Refinement
+- **Context**: Performance Delta: 0.0000
+- **Lesson**: Never rely on undeclared external runtime objects (conn, globals, injected fixtures); embed deterministic, self-contained data loading inside the strategy so it remains executable under any bootstrap or test harness.
+- **ParentHash**: 2a237271c6a9c2b386a5b4fd7614c2f570e9bfc8bd05b2257e864a9fb115eb7e
+- **Hash**: 326a4de8221feefab0b7f6487bc7bcc95057a9e855065927dd17371b2d1233fd
+
+---
+
+### [BLOCK_35] | CAUSAL-Refinement
+- **Context**: Performance Delta: 0.0000
+- **Lesson**: Center bootstrap samples under the null hypothesis (subtract observed mean) before calculating p-values, and never confuse a full-sample statistical test with an actual sequential backtest engine.
+- **ParentHash**: 326a4de8221feefab0b7f6487bc7bcc95057a9e855065927dd17371b2d1233fd
+- **Hash**: 0ac2399706780bd6a57dd8f79bff44c47343098bcfc798070673241fa72f495d

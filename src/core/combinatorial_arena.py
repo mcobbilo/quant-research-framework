@@ -10,7 +10,7 @@ import torch
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
-from src.models.xlstm_wrapper import xLSTMForecast
+from src.models.timesfm_wrapper import TimesFMWrapper
 from src.api.karpathy_ide import dispatch_obsidian_response
 
 logging.basicConfig(level=logging.INFO)
@@ -98,10 +98,10 @@ def evaluate_subset(exog_subset, n_windows, max_steps):
     if len(df_core) < 100:
         return float("inf")
 
-    # Easy plug-in architecture for replacing xLSTM with TimesFM logic.
-    model = xLSTMForecast(
+    # Hot-swapped xLSTM with TimesFMWrapper logic.
+    model = TimesFMWrapper(
         h=10,
-        input_size=20,  # Reduced memory context to allow rapid genetic turnover
+        input_size=128,  # Increased minimum context required for foundation models
         max_steps=max_steps,
         hist_exog_list=hist_exog,
         freq="B",

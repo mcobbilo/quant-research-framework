@@ -10,6 +10,12 @@ This document serves as the central Nervous System for the quant framework. It c
 
 - **ABSOLUTE VETO ON LEVERAGE:** The system and user will **never** use leverage. Do not ever propose Kelly-multiplier leverage (e.g., 1.5x, 2.0x Kelly sizing), margined allocation ratios, or any strategy mechanics that exceed 100% of nominal capital exposure (`MAX_EXPOSURE = 1.0`). If a fractional or alignment system scores maximum conviction, capital allocation must hard-cap precisely at `TARGET_VOL` weight without multiplier augmentation. Do not suggest or architect leverage under any circumstance.
 
+### The Karpathy Agentic Constitution
+- **Think Before Coding**: Explicitly state assumptions, surface tradeoffs, and stop to ask clarifying questions prior to generating logic during periods of high ambiguity. Do not silently guess intents.
+- **Simplicity First**: Write the absolute minimum code required to solve a problem. Avoid speculative future-proofing, complex layers of abstraction, and bloated generic patterns. If 200 lines could be 50, rewrite it.
+- **Surgical Changes**: Modify only the exact lines requested. Do not attempt drive-by "improvements" on orthogonal architecture. Remove dead code *only* if the current intervention orphaned it. 
+- **Goal-Driven Execution**: Break imperative instructions into declarative goals. Establish explicit verification criteria for each component loop and independently iterate until success is mathematically verified.
+
 ---
 
 ## 🏆 The "Council of Winners" (Top Validated Baselines)

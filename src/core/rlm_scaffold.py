@@ -13,10 +13,15 @@ def check_code_safety(code):
 
     for node in ast.walk(tree):
         if isinstance(node, (ast.Import, ast.ImportFrom)):
-            return (
-                False,
-                "Security Exception: Imports are strictly prohibited in the RLM REPL.",
-            )
+            whitelist = {"numpy", "pandas", "scipy", "sklearn", "typing", "datetime", "statsmodels"}
+            module_name = getattr(node, "module", None)
+            
+            if module_name is not None and module_name.split(".")[0] not in whitelist:
+                return False, f"Security Exception: Import from '{module_name}' is strictly prohibited."
+                
+            for alias in getattr(node, "names", []):
+                if alias.name.split(".")[0] not in whitelist:
+                    return False, f"Security Exception: Import of '{alias.name}' is strictly prohibited."
 
         if isinstance(node, ast.Attribute):
             if node.attr.startswith("__") and node.attr.endswith("__"):
@@ -64,17 +69,21 @@ class RLMScaffold:
         # Inject safe libraries so the LLM doesn't need to import them
         import json
         import math
+        import numpy as np
+        import pandas as pd
 
         state["re"] = re
         state["json"] = json
         state["math"] = math
+        state["np"] = np
+        state["pd"] = pd
 
         # Setup system message
         system_msg = (
             f"You are {self.agent_name}, a Recursive Language Model operating inside a programmatic REPL.\n"
             f"You can write Python code inside ```python ... ``` blocks to process large texts, arrays, or solve the task.\n"
             f"This code will be executed natively in your state. Standard output (print) will be captured and fed back to you.\n"
-            f"SECURITY: Imports (`import os`) and reflection are permanently blocked. Use `re`, `json`, and `math` which are pre-loaded in state.\n"
+            f"SECURITY: Reflection or system imports (like `os`) are permanently blocked. Whitelisted for import: `numpy`, `pandas`, `scipy`, `sklearn`, `typing`, `statsmodels`. `np` and `pd` are pre-loaded.\n"
             f"To finish your task and exit the REPL, you MUST assign your final output to a variable named 'Final'.\n"
             f"Available variables in state: {list(state.keys())}"
         )

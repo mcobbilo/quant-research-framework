@@ -36,8 +36,9 @@ class AELayer(nn.Module):
 
 class MarketAutoEncoder(nn.Module):
     """
-    Continuous AutoEncoder for high-bandwidth market state representation.
-    Compresses high-dimensional technical and OSINT features into a latent vector.
+    Stochastic Variational AutoEncoder for high-bandwidth market state representation.
+    Compresses high-dimensional technical and OSINT features into a latent probabilistic space.
+    Adapted from CALM (arXiv:2510.27688).
     """
 
     def __init__(self, input_dim: int, latent_dim: int = 128, n_layers: int = 3):
@@ -51,7 +52,7 @@ class MarketAutoEncoder(nn.Module):
         for _ in range(n_layers):
             encoder_layers.append(AELayer(curr_dim, curr_dim * 2))
         self.encoder_backbone = nn.Sequential(*encoder_layers)
-        self.latent_proj = nn.Linear(input_dim, latent_dim)
+        self.latent_proj = nn.Linear(input_dim, latent_dim * 2) # Expand for mean and log_std
 
         # Decoder
         self.latent_expand = nn.Linear(latent_dim, input_dim)
@@ -71,9 +72,21 @@ class MarketAutoEncoder(nn.Module):
         return self.output_proj(h)
 
     def forward(self, x):
-        z = self.encode(x)
+        latent_states = self.encode(x)
+        mean, log_std = torch.chunk(latent_states, 2, dim=-1)
+        
+        # Reparameterization
+        std = torch.exp(log_std)
+        eps = torch.randn_like(mean)
+        z = mean + eps * std if self.training else mean
+        
+        # Precompute KL Divergence penalty
+        kl_loss = 0.5 * (torch.pow(mean, 2) + torch.pow(std, 2) - 1 - log_std * 2)
+        kl_loss = torch.clamp(kl_loss, min=-20.0)
+        kl_loss = torch.mean(torch.sum(kl_loss, dim=-1))
+        
         x_recon = self.decode(z)
-        return x_recon, z
+        return x_recon, mean, log_std, kl_loss
 
 
 class ActionDecoder(nn.Module):
@@ -96,21 +109,44 @@ class ActionDecoder(nn.Module):
         return self.decoder(z)
 
 
-class BrierLoss(nn.Module):
+class EnergyLoss(nn.Module):
     """
-    Likelihood-free loss for continuous latent vectors.
-    Based on the paper's collision probability concept.
+    Likelihood-free Energy Score for continuous latent generation.
+    Extracted from the official CALM paper implementation (shaochenze/calm).
     """
 
-    def __init__(self):
+    def __init__(self, beta: float = 1.0):
         super().__init__()
+        self.beta = beta
 
-    def forward(self, z_pred, z_target):
-        # In a regression context, Brier is often equivalent to MSE
-        # but the CALM paper uses it as a collision probability check.
-        # For this version, we will implement the MSE as a primary metric
-        # and include a collision check as a secondary term.
-        mse_loss = F.mse_loss(z_pred, z_target)
-        # Collision term: how similar are they in cosine space?
-        cos_sim = F.cosine_similarity(z_pred, z_target).mean()
-        return mse_loss + (1.0 - cos_sim)
+    def distance(self, x_1, x_2):
+        return torch.pow(torch.linalg.norm(x_1 - x_2, ord=2, dim=-1), self.beta)
+    
+    def forward(self, x, mean, log_std):
+        if x.dim() == mean.dim():
+            x = x.unsqueeze(dim=0)  # Add n_x dimension for multiple prediction paths
+            
+        n_x = x.shape[0]
+        x_i = x.unsqueeze(1)  # (n_x, 1, batch_size, ...)
+        x_j = x.unsqueeze(0)  # (1, n_x, batch_size, ...)
+        distance_matrix = self.distance(x_i, x_j)
+        
+        # Penalize collapse across multiple sampled predictions (if n_x > 1)
+        if n_x > 1:
+            distance_x = distance_matrix.sum(dim=(0,1)) / (n_x * (n_x - 1))
+        else:
+            distance_x = 0.0
+
+        std = torch.exp(log_std)
+        n_y = 100 # Emulate density 
+        eps = torch.randn((n_y, *mean.shape), device=mean.device)
+        y = mean + eps * std  # (n_y, batch_size, ...)
+
+        x_ = x.reshape(n_x, 1, *x.shape[1:])  # (n_x, 1, batch_size, ...)
+        y_ = y.reshape(1, n_y, *y.shape[1:])  # (1, n_y, batch_size, ...)
+        
+        # Minimize distance to generated synthetic ground-truth space
+        distance_y = self.distance(x_, y_).mean(dim=(0, 1))
+        
+        score = distance_x - distance_y * 2
+        return score

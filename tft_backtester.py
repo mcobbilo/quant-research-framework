@@ -26,38 +26,24 @@ def run_tft_backtest():
     df["time_idx"] = np.arange(len(df))
     df["group_id"] = "portfolio"
 
+    categoricals = ["Kronos_S1", "Kronos_S2"]
+    for c in categoricals:
+        if c in df.columns:
+            # Handle NaN to string mapping logic natively to match training state and remove float artifacts
+            df[c] = df[c].apply(lambda x: np.nan if pd.isna(x) else str(int(float(x))))
+
     max_prediction_length = 21
 
-    # Re-instantiate the EXACT data boundaries used in training to map scalers properly
-    training = TimeSeriesDataSet(
-        df,
-        time_idx="time_idx",
-        target="SPY_Log_Return",
-        group_ids=["group_id"],
-        max_encoder_length=252,
-        max_prediction_length=max_prediction_length,
-        time_varying_unknown_reals=[
-            c
-            for c in df.columns
-            if c not in ["time_idx", "group_id", "day_of_year_sin", "month"]
-            and not c.startswith("target")
-            and c != "SPY_Log_Return"
-        ],
-        time_varying_known_reals=["day_of_year_sin", "month"]
-        if "day_of_year_sin" in df.columns
-        else [],
-        add_relative_time_idx=True,
-    )
-
-    print("Loading internal weights from Epoch 12...")
-    ckpt_path = "/Users/milocobb/Desktop/Recent Swarm Papers/quant_framework/lightning_logs/version_1162/checkpoints/epoch=12-step=3055.ckpt"
+    print("Loading internal weights from Epoch 10...")
+    ckpt_path = "/Users/milocobb/Desktop/Recent Swarm Papers/quant_framework/lightning_logs/version_1166/checkpoints/epoch=10-step=2596.ckpt"
     model = TemporalFusionTransformer.load_from_checkpoint(
         ckpt_path, map_location="cpu", weights_only=False
     )
 
     # Evaluate the final 3 years (out-of-sample stress test) to avoid multi-hour iterator stalls
-    dataset = TimeSeriesDataSet.from_dataset(
-        training, df, min_prediction_idx=len(df) - 750
+    # Construct seamlessly from the model's saved parameters to prevent metric corruption
+    dataset = TimeSeriesDataSet.from_parameters(
+        model.dataset_parameters, df, min_prediction_idx=len(df) - 750
     )
     dataloader = dataset.to_dataloader(train=False, batch_size=64, num_workers=0)
 
@@ -103,35 +89,15 @@ def run_tft_backtest():
         np.where(df["Forward_21d_Prediction"] <= -0.01, -1.0, 0.0),
     )
 
-    # Calculate returns (using the actual 1-day daily forward log returned approximation)
+    # Calculate returns structurally, completely abolishing any latency fallbacks to target variables
     if "SPY" in df.columns:
         df["Daily_Return"] = df["SPY"].pct_change()
-    elif "target_SPY_fwd21" in df.columns:
-        # If true SPY daily return isn't preserved easily, we use the forward target fractionalized as a proxy
-        # But wait! A proper backtest needs the day's actual return to multiply position.
-        # Let's derive daily returns. In typical pipelines there's a base close price variable.
-        pass
-
-    # Better logic: target_SPY_fwd21 is derived from shifting SPY by 21.
-    # But usually 'target_SPY_fwd21' implies the forward window. We need the 1-day underlying.
-    # To keep this mathematically safe, let's load SPY from market_df.
-    # Let's rebuild the market close logic exactly as we did in the original fomc script
-    # For now, let's look for a SPY Close proxy, or generate one from another proxy variable if missing.
-    # Assume target_SPY is the return. If clean_aligned_features_27yr doesn't have SPY...
-    pass
-
-    # Actually, df already has the returns if we look back. But wait, `target_SPY_fwd21` is the 21-day forward.
-    # This means `target_SPY_fwd21` / 21 is a static daily average, not a true sequential compounded path.
-    # Let's search inside df for specific SPY index fields.
-    close_col = [c for c in df.columns if "SPY" in c and "target" not in c]
-    if len(close_col) > 0:
-        df["Daily_Return"] = df[close_col[0]].pct_change()
     else:
-        # Fallback to the 21-day return divided by 21, but shifted properly backward
-        # target_SPY_fwd21 at T = return from T to T+21.
-        # Thus, target_SPY_fwd21 at T-21 = return from T-21 to T.
-        # We can approximate daily returns just by taking the daily diff of a proxy
-        df["Daily_Return"] = df["target_SPY_fwd21"].shift(21) / 21
+        close_col = [c for c in df.columns if "SPY" in c and "target" not in c]
+        if len(close_col) > 0:
+            df["Daily_Return"] = df[close_col[0]].pct_change()
+        else:
+            raise ValueError("No viable proxy for sequence daily execution found. 'target_SPY_fwd21' fallback is abolished.")
 
     # Calculate returns inside the actual out-of-sample forward bounds securely
     eval_df = df[df["time_idx"].isin(pred_idx)].copy()

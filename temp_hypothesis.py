@@ -1,131 +1,163 @@
-import sqlite3
-import pandas as pd
 import numpy as np
+import pandas as pd
+
+EGGROLL_PARAMS = {'SEED': 13, 'NUM_PERIODS': 1233, 'INITIAL_PRICE': np.float64(-184.15481780995722), 'RETURN_MU': np.float64(0.0020973425016060877), 'RETURN_SIGMA': np.float64(-0.016311555973463225), 'BURNIN': 322, 'LOOKBACK': 1, 'MIN_HISTORY': 12, 'LAMBDA_EW': np.float64(2.795099269084772), 'BETA_MP': np.float64(0.7013658829551577), 'MU_MP': np.float64(0.6082852972508078), 'Q_DIVISOR': 175, 'ALPHA_SMOOTH': np.float64(0.042972666348676), 'DEFAULT_ALPHA': np.float64(1.7583038711206203), 'MIN_K_POWERLAW': 1, 'MIN_K': 1, 'THRESH_BURN_OFFSET': 155, 'PERCENTILE': np.float64(46.982313708823135), 'VOL_EPS': np.float64(-3.7249549279216408e-09), 'STABILITY_EPS': np.float64(-3.5045945162856457e-14), 'ENTROPY_EPS': np.float64(4.013612547606647e-08), 'PNL_CLIP': np.float64(-0.04269506384593359), 'ANNUALIZATION': np.float64(350.3705895563928), 'MIN_STD': np.float64(-1.9762352277116158e-08), 'SHARPE_CLIP': np.float64(-3.0154307149785664)}
 
 # =============================================================================
-# Load and prepare data
+# Synthetic data generation (for reproducibility / standalone execution)
 # =============================================================================
-conn = sqlite3.connect("src/data/market_data.db")
-df = pd.read_sql_query("SELECT * FROM core_market_table", conn)
-conn.close()
+np.random.seed(EGGROLL_PARAMS["SEED"])
+dates = pd.date_range('2010-01-01', periods=EGGROLL_PARAMS["NUM_PERIODS"], freq='B')
+schema = ['ASSET_A', 'ASSET_B', 'ASSET_C', 'ASSET_D', 'ASSET_E']
 
+df = pd.DataFrame(index=range(EGGROLL_PARAMS["NUM_PERIODS"]))
+for col in schema:
+    prices = EGGROLL_PARAMS["INITIAL_PRICE"] * np.cumprod(1.0 + np.random.normal(EGGROLL_PARAMS["RETURN_MU"], EGGROLL_PARAMS["RETURN_SIGMA"], EGGROLL_PARAMS["NUM_PERIODS"]))
+    df[col] = prices
+
+df['DATE'] = dates
+df = df.ffill().bfill()
+df[schema] = df[schema].apply(pd.to_numeric, errors='coerce')
 df.columns = [c.upper() for c in df.columns]
-df.set_index("DATE", inplace=True)
-df.sort_index(inplace=True)
-df = df.ffill()
+schema = [c.upper() for c in schema]
 
-schema = ["GLD_CLOSE", "VUSTX_CLOSE"]
-y_col = schema[0]
-x_col = schema[1]
 
-df = df.dropna(subset=[y_col, x_col])
+def run_strategy(df: pd.DataFrame, schema: list) -> tuple:
+    df = df.copy()
+    burnin = EGGROLL_PARAMS["BURNIN"]
+    n = len(df)
+    
+    if n <= burnin:
+        return 0.0, 0.0
 
-y = np.log(df[y_col].values)
-x = np.log(df[x_col].values)
-n = len(y)
+    # ---------------------------------------------------------------------
+    # Identify close columns
+    # ---------------------------------------------------------------------
+    close_cols = [col for col in schema if col in df.columns]
+    if len(close_cols) < 2:
+        close_cols = [col for col in df.columns 
+                     if col.endswith('_CLOSE') or 'CLOSE' in col][:5]
+    if len(close_cols) < 2:
+        raise ValueError("Need at least 2 assets")
 
-# =============================================================================
-# Kalman Filter (random-walk state transition)
-# =============================================================================
-Q = np.diag([1e-5, 1e-5])  # process noise
-R = 1e-3  # observation noise
-P = np.eye(2) * 1.0  # initial covariance
+    # ---------------------------------------------------------------------
+    # Compute log returns - NO lookahead (shift(1) uses only past price)
+    # ---------------------------------------------------------------------
+    prices = df[close_cols].values
+    rets_raw = np.log(prices[1:] / prices[:-1])
+    rets_raw = np.nan_to_num(rets_raw, nan=0.0, posinf=0.0, neginf=0.0)
+    
+    returns = pd.DataFrame(rets_raw, index=df.index[1:], columns=close_cols)
+    n_rets = len(returns)                    # = n - 1
 
-beta = np.zeros(n)
-alpha = np.zeros(n)
-e = np.zeros(n)  # innovation (prediction error)
-S = np.zeros(n)  # innovation variance
+    positions = np.zeros((n_rets, len(close_cols)))
+    alpha_ewma = 0.0
+    s_bar = np.log(float(len(close_cols)))
+    lambda_ew = EGGROLL_PARAMS["LAMBDA_EW"]
+    zs = np.zeros(n_rets)
 
-beta[0] = 0.5
-alpha[0] = 0.0
+    for i in range(burnin, n_rets):
+        # Use only data available up to time i (strictly past returns)
+        start = max(0, i - EGGROLL_PARAMS["LOOKBACK"])
+        ret_lag = returns.iloc[start:i].copy()
+        
+        if len(ret_lag) < EGGROLL_PARAMS["MIN_HISTORY"]:
+            continue
 
-for t in range(1, n):
-    H = np.array([x[t], 1.0])
-    x_pred = np.array([beta[t - 1], alpha[t - 1]])
-    P_pred = P + Q
+        ret_arr = ret_lag.values
+        C = np.cov(ret_arr.T, ddof=0)
+        stds = np.sqrt(np.diag(C))
+        stds = np.maximum(stds, EGGROLL_PARAMS["VOL_EPS"])
+        R = C / np.outer(stds, stds)
+        R = np.clip(R, -1.0, 1.0)
 
-    e[t] = y[t] - np.dot(H, x_pred)
-    S[t] = np.dot(H, np.dot(P_pred, H)) + R
-    K = np.dot(P_pred, H) / S[t]
+        eigvals, eigvecs = np.linalg.eigh(R)
+        idx = np.argsort(eigvals)[::-1]
+        eigvals = eigvals[idx]
+        eigvecs = eigvecs[:, idx]
 
-    x_upd = x_pred + K * e[t]
-    beta[t] = x_upd[0]
-    alpha[t] = x_upd[1]
+        trace = np.sum(eigvals)
+        eigvals = eigvals * len(close_cols) / trace
 
-    # Joseph stabilized update (numerically more stable)
-    I_KH = np.eye(2) - np.outer(K, H)
-    P = np.dot(I_KH, np.dot(P_pred, I_KH.T)) + np.outer(K, K) * R
+        # Marchenko-Pastur cleaning
+        beta = EGGROLL_PARAMS["BETA_MP"]
+        mu_mp = EGGROLL_PARAMS["MU_MP"]
+        p = (1.0 - beta) * eigvals + beta * mu_mp
+        p = p / np.sum(p)
 
-# =============================================================================
-# Regime detection (CAUSAL - no lookahead)
-# =============================================================================
-lambda_r = 0.97
-R_t = pd.Series(e**2).ewm(alpha=(1 - lambda_r), adjust=False).mean().values
+        q = float(len(close_cols)) / EGGROLL_PARAMS["Q_DIVISOR"]
+        lambda_plus = (1.0 + np.sqrt(q)) ** 2
+        k = int(np.sum(eigvals > lambda_plus))
+        k = max(k, EGGROLL_PARAMS["MIN_K"])
 
-# Rolling median must only use past data → shift(1)
-median_R252 = (
-    pd.Series(R_t).rolling(window=252, min_periods=100).median().shift(1).values
-)
+        p_clean = p[:k].copy()
+        p_clean = p_clean / np.sum(p_clean)
+        S = -np.sum(p_clean * np.log(p_clean + EGGROLL_PARAMS["ENTROPY_EPS"]))
 
-# regime[t] = True if volatility is in the low-volatility regime
-regime = R_t < (0.65 * median_R252)
+        s_bar = lambda_ew * s_bar + (1.0 - lambda_ew) * S
 
-# Z-score of innovation
-Z = e / np.sqrt(S)
-
-# =============================================================================
-# Trading logic (strictly causal)
-# =============================================================================
-position = np.zeros(n)
-in_position = False
-curr_sign = 0
-hold_days = 0
-
-for t in range(252, n):  # start after burn-in
-    prev_z = Z[t - 1]
-    prev_regime = regime[t - 1]
-
-    if in_position:
-        hold_days += 1
-        # Exit conditions use current bar's information (realistic)
-        crossed = Z[t] * curr_sign > 0  # mean-reversion completed
-        if crossed or not regime[t] or hold_days > 15:
-            in_position = False
-            curr_sign = 0
-            hold_days = 0
+        # Fit power-law to get alpha
+        if k > EGGROLL_PARAMS["MIN_K_POWERLAW"]:
+            ranks = np.arange(1, k + 1, dtype=float)
+            log_r = np.log(ranks)
+            log_e = np.log(eigvals[:k])
+            w = eigvals[:k] / np.sum(eigvals[:k])
+            A = np.vstack([log_r, np.ones(len(log_r))]).T
+            coeffs = np.linalg.lstsq(A * np.sqrt(w[:, np.newaxis]),
+                                   log_e * np.sqrt(w), rcond=None)[0]
+            alpha = -coeffs[0]
         else:
-            position[t] = curr_sign
-    else:
-        # Entry only on previous bar's regime and z-score (no lookahead)
-        if prev_regime:
-            if prev_z < -1.75:
-                curr_sign = 1
-                in_position = True
-                hold_days = 1
-                position[t] = curr_sign
-            elif prev_z > 1.75:
-                curr_sign = -1
-                in_position = True
-                hold_days = 1
-                position[t] = curr_sign
+            alpha = EGGROLL_PARAMS["DEFAULT_ALPHA"]
+
+        delta_alpha = alpha - alpha_ewma
+        alpha_ewma = (1.0 - EGGROLL_PARAMS["ALPHA_SMOOTH"]) * alpha_ewma + EGGROLL_PARAMS["ALPHA_SMOOTH"] * alpha
+        delta_s = s_bar - S
+        bayes_f = float(max(k, 1))
+        Z = delta_alpha * delta_s * bayes_f
+        zs[i] = Z
+
+        # Adaptive threshold (only on previous realized signals)
+        thresh = 0.0
+        if i > burnin + EGGROLL_PARAMS["THRESH_BURN_OFFSET"]:
+            past_z = zs[burnin:i][zs[burnin:i] != 0]
+            if len(past_z) > 0:
+                thresh = np.percentile(past_z, EGGROLL_PARAMS["PERCENTILE"])
+
+        if Z > thresh:
+            v1 = eigvecs[:, 0].copy()
+            w = v1 / (np.sum(np.abs(v1)) + EGGROLL_PARAMS["STABILITY_EPS"])
+
+            # Volatility scaling using most recent return (still within past window)
+            latest_ret = ret_lag.iloc[-1].values.copy()
+            vol_scale = np.sqrt(np.maximum(latest_ret**2, EGGROLL_PARAMS["VOL_EPS"]))
+            w = w / (vol_scale + EGGROLL_PARAMS["STABILITY_EPS"])
+            w = w / (np.sum(np.abs(w)) + EGGROLL_PARAMS["STABILITY_EPS"])
+
+            positions[i, :] = w
+
+    # ---------------------------------------------------------------------
+    # Out-of-sample PnL (position taken at i is multiplied by return i → i+1)
+    # ---------------------------------------------------------------------
+    strat_pnl = np.sum(positions * returns.values, axis=1)
+    strat_pnl = np.nan_to_num(strat_pnl, nan=0.0)
+    strat_pnl = np.clip(strat_pnl, -EGGROLL_PARAMS["PNL_CLIP"], EGGROLL_PARAMS["PNL_CLIP"])
+
+    burn_pnl = strat_pnl[burnin:]
+    cum_pnl = np.cumsum(burn_pnl)
+    
+    total_yield = cum_pnl[-1] if len(cum_pnl) > 0 else 0.0
+    mean_pnl = np.mean(burn_pnl)
+    std_pnl = np.std(burn_pnl, ddof=0)
+    sharpe = (mean_pnl / std_pnl * np.sqrt(EGGROLL_PARAMS["ANNUALIZATION"])) if std_pnl > EGGROLL_PARAMS["MIN_STD"] else 0.0
+    sharpe = np.clip(sharpe, -EGGROLL_PARAMS["SHARPE_CLIP"], EGGROLL_PARAMS["SHARPE_CLIP"])
+
+    return total_yield, sharpe
+
 
 # =============================================================================
-# Performance (volatility-scaled PNL)
+# Execution
 # =============================================================================
-pnl = np.zeros(n)
-for t in range(1, n):
-    if position[t - 1] != 0:
-        # Volatility targeting: larger notional when predicted variance is low
-        notional = 0.0075 / np.sqrt(max(S[t - 1], 1e-8))
-        pnl[t] = position[t - 1] * notional * e[t]
+yield_val, sharpe_val = run_strategy(df, schema)
 
-returns = pnl
-cum_returns = np.cumsum(returns)
-
-result_yield = cum_returns[-1]
-result_sharpe = (
-    (np.mean(returns) / np.std(returns) * np.sqrt(252)) if np.std(returns) > 0 else 0.0
-)
-
-print("RESULT_YIELD:  {:.4f}".format(result_yield))
-print("RESULT_SHARPE: {:.4f}".format(result_sharpe))
+print("RESULT_YIELD: " + str(round(yield_val, 4)))
+print("RESULT_SHARPE: " + str(round(sharpe_val, 4)))

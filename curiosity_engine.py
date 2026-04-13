@@ -13,6 +13,7 @@ from council_voice_orchestrator import CouncilVoiceOrchestrator
 from src.core.memory_synthesizer import MemorySynthesizer
 from src.core.harness_evaluator import HarnessEvaluator
 from src.core.adversarial_mocks import generate_adversarial_paths
+from src.core.mempalace.temporal_knowledge_graph import TemporalKnowledgeGraph
 
 # V2.0 Node Imports
 from src.core.nodes.strategy_node import StrategyNode
@@ -27,6 +28,7 @@ VICTORIES_DIR = "victories"
 # Initialize Core Services
 SYNTHESIZER = MemorySynthesizer(MEMORY_FILE)
 EVALUATOR = HarnessEvaluator()
+KG = TemporalKnowledgeGraph()
 
 HARNESS_PATH = "src/core/harness_config.json"
 BACKUP_DIR = "src/core/harness_backups"
@@ -356,9 +358,12 @@ def main_loop(max_iterations=10, mode="research"):
                     print(f"[CHAMPION] >> New Performance Peak: {new_sharpe:.4f} <<")
                     CHAMPION_SHARPE = new_sharpe
                     CHAMPION_CODE = result["code"]
+                    KG.add_triple(hyp_name, "crowned", "Champion_Strategy")
+                    KG.add_triple(hyp_name, "achieved_sharpe", str(new_sharpe))
 
                 msg = f"[S] {hyp_name}: Yield: {new_yield} | Sharpe: {new_sharpe}"
                 write_memory(msg)
+                KG.add_triple(hyp_name, "status", "Success")
                 shutil.copy(
                     "temp_hypothesis.py", os.path.join(VICTORIES_DIR, f"{hyp_name}.py")
                 )

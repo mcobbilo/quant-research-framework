@@ -2,6 +2,7 @@ import os
 import re
 import subprocess
 import json
+from src.core.mempalace.agent_diary import AgentDiary
 
 
 class OSINTNode:
@@ -15,6 +16,7 @@ class OSINTNode:
             deep_research_path
             or "/Users/milocobb/.gemini/antigravity/skills/deep-research/scripts/research.py"
         )
+        self.diary = AgentDiary("OSINTNode")
 
     def _construct_dork(self, topic, site=None, filetype=None, intitle=None):
         """Programmatic dork constructor based on OSINT Strategy Guide."""
@@ -125,4 +127,7 @@ class OSINTNode:
             rlm_prompt, context_vars=rlm_context, max_iterations=5, temperature=0.1
         )
 
+        self.diary.write(f"OSINT Dorks Used: {dorks}")
+        str_digest = str(digest)
+        self.diary.write(f"Research Digest: {str_digest[:200]}...")
         return {"dorks": dorks, "digest": digest, "raw_findings": findings}

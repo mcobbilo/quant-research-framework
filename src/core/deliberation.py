@@ -2,7 +2,8 @@ import os
 import torch
 import torch.nn as nn
 from typing import List, Dict
-from models.calm_engine import MarketAutoEncoder, BrierLoss, ActionDecoder
+import agentlightning as agl
+from models.calm_engine import MarketAutoEncoder, EnergyLoss, ActionDecoder
 
 
 class EndogenousRoleAdapter(nn.Module):
@@ -51,7 +52,7 @@ class LatentCouncil:
             latent_dim=latent_dim
         )  # New Agentic Action Head
         self.akf = AdaptiveKalmanFilter()  # AKF for innovation tracking
-        self.loss_fn = BrierLoss()
+        self.loss_fn = EnergyLoss(beta=1.0)
         self.latent_dim = latent_dim
         self.weights_path = weights_path
 
@@ -77,10 +78,13 @@ class LatentCouncil:
         target_path = path or self.weights_path
         if os.path.exists(target_path):
             checkpoint = torch.load(target_path, map_location=torch.device("cpu"))
-            self.model.load_state_dict(checkpoint["model_state_dict"])
-            self.role_adapter.load_state_dict(checkpoint["role_adapter_state_dict"])
-            self.action_decoder.load_state_dict(checkpoint["action_decoder_state_dict"])
-            print(f"[Council] Weights restored from {target_path}")
+            try:
+                self.model.load_state_dict(checkpoint["model_state_dict"], strict=True)
+                self.role_adapter.load_state_dict(checkpoint["role_adapter_state_dict"])
+                self.action_decoder.load_state_dict(checkpoint["action_decoder_state_dict"])
+                print(f"[Council] Weights restored from {target_path}")
+            except RuntimeError as e:
+                print(f"[Council] Architecture mismatch detected. Proceeding with random initialization. ({e})")
         else:
             print(
                 f"[Council] No calibration weights found at {target_path}. Using random initialization."
@@ -103,7 +107,10 @@ class LatentCouncil:
         _, akf_q, innovation_score = self.akf.update(feature_proxy)
 
         with torch.no_grad():
-            latent_vector = self.model.encode(agent_features)
+            latent_states = self.model.encode(agent_features)
+            mean, log_std = torch.chunk(latent_states, 2, dim=-1)
+            # Standard prediction pathway operates on mean expected representation
+            latent_vector = mean
 
         if previous_consensus is not None:
             # Self-organize by adapting to the current council direction
@@ -148,13 +155,19 @@ class LatentCouncil:
     ) -> float:
         """
         Likelihood-free verification of the predicted state vs actual market realization.
-        Returns a 'Curiosity Signal' (Brier Score).
+        Returns a 'Curiosity Signal' (Energy Score).
         """
         with torch.no_grad():
-            actual_latent = self.model.encode(actual_market_features)
+            actual_latent_states = self.model.encode(actual_market_features)
+            mean, log_std = torch.chunk(actual_latent_states, 2, dim=-1)
 
-        # Brier Score / MSE in latent space
-        drift = torch.nn.functional.mse_loss(predicted_latent, actual_latent).item()
+        # Loss is negative energy score.
+        score = self.loss_fn(predicted_latent, mean, log_std)
+        drift = -score.mean().item()
+        
+        # Emit negative drift (i.e. positive score) as the explicit Process Reward Tensor to the algorithm
+        agl.emit_env_reward(-drift)
+        
         return drift
 
     def derive_action(
@@ -188,4 +201,9 @@ class LatentCouncil:
             2: "stage_hedge",
         }
 
-        return mapping.get(action_idx, "trigger_human_review")
+        final_action = mapping.get(action_idx, "trigger_human_review")
+        
+        # Register the final tactical decision output for tracing
+        agl.emit_inference_output(final_action)
+        
+        return final_action

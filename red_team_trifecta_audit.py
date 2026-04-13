@@ -63,8 +63,8 @@ def train_tft_for_asset(df_train, df_test, features, target_col, max_epochs=5):
         training, df, predict=True, stop_randomization=True
     )
 
-    train_dataloader = training.to_dataloader(train=True, batch_size=64, num_workers=0)
-    val_dataloader = validation.to_dataloader(train=False, batch_size=64, num_workers=0)
+    train_dataloader = training.to_dataloader(train=True, batch_size=64, num_workers=9)
+    val_dataloader = validation.to_dataloader(train=False, batch_size=64, num_workers=9)
 
     trainer = pl.Trainer(
         max_epochs=max_epochs,

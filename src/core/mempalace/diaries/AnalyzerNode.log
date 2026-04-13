@@ -1,0 +1,3 @@
+[2026-04-12T12:07:12.097779+00:00] Identified REGRESSION flaw: Compute all deviations against prior EWMA state before any update, and use window std (not single-bar return) for volatility scaling.
+[2026-04-12T12:11:10.057305+00:00] Identified CAUSAL flaw: Never rely on undeclared external runtime objects (conn, globals, injected fixtures); embed deterministic, self-contained data loading inside the strategy so it remains executable under any bootstrap or test harness.
+[2026-04-12T12:13:02.568862+00:00] Identified CAUSAL flaw: Center bootstrap samples under the null hypothesis (subtract observed mean) before calculating p-values, and never confuse a full-sample statistical test with an actual sequential backtest engine.

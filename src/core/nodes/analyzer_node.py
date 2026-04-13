@@ -1,12 +1,16 @@
 import os
 import re
 import hashlib
+from src.core.mempalace.temporal_knowledge_graph import TemporalKnowledgeGraph
+from src.core.mempalace.agent_diary import AgentDiary
 
 
 class AnalyzerNode:
     def __init__(self, harness_config, call_llm_func):
         self.config = harness_config
         self.call_llm = call_llm_func
+        self.kg = TemporalKnowledgeGraph()
+        self.diary = AgentDiary("AnalyzerNode")
 
     def execute(
         self,
@@ -68,6 +72,13 @@ LESSON: <one-sentence instruction to avoid this in the future>
             else:
                 lines = [l for l in analysis_raw.split("\n") if l.strip()]
                 lesson = lines[-1].strip() if lines else "Distillation complete."
+
+            # Write to Temporal Knowledge Graph & Diary
+            type_tag = "REGRESSION" if is_regression else "CAUSAL"
+            subject = f"Failed_Hypothesis"
+            predicate = f"failed_due_to_{type_tag}"
+            self.diary.write(f"Identified {type_tag} flaw: {lesson}")
+            self.kg.add_triple(subject, predicate, lesson)
 
             # Merkle-Light Hashing Logic
             parent_hash = "00000000"
